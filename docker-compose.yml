@@ -1,0 +1,30 @@
+services:
+  bekhab-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: bekhab-prod
+    ports:
+      - "3003:3000"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    profiles:
+      - prod
+
+  bekhab-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: bekhab-dev
+    ports:
+      - "3003:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+    profiles:
+      - dev

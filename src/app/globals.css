@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #020617;
+  --foreground: #e2e8f0;
+  --indigo: #6366f1;
+  --obsidian: #020617;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-vazirmatn), sans-serif;
+  direction: rtl;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar — dark */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #0f172a; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+
+/* Range input — indigo accent */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(99, 102, 241, 0.2);
+  outline: none;
+  direction: ltr;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #6366f1;
+  cursor: pointer;
+  border: 2px solid #020617;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.6);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #6366f1;
+  cursor: pointer;
+  border: 2px solid #020617;
+}
+
+/* Time input */
+input[type="time"] { direction: ltr; }
+input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+
+/* === BREATHING CIRCLE === */
+@keyframes breatheCycle {
+  /* 4s inhale */
+  0%   { transform: scale(1);    opacity: 0.4; }
+  21%  { transform: scale(1.35); opacity: 0.95; }
+  /* 7s hold */
+  21%  { transform: scale(1.35); opacity: 0.95; }
+  58%  { transform: scale(1.35); opacity: 0.85; }
+  /* 8s exhale */
+  58%  { transform: scale(1.35); opacity: 0.85; }
+  100% { transform: scale(1);    opacity: 0.4; }
+}
+.breathing-circle {
+  animation: breatheCycle 19s ease-in-out infinite;
+}
+
+/* Phase text animation synced with breath */
+@keyframes phaseText {
+  0%, 100%  { content: "دم بگیر"; }
+  21%       { content: "نگه دار"; }
+  58%       { content: "بازدم"; }
+}
+
+/* Glow ring */
+@keyframes glowRing {
+  0%, 100% { box-shadow: 0 0 20px rgba(99,102,241,0.2), inset 0 0 20px rgba(99,102,241,0.1); }
+  50%      { box-shadow: 0 0 40px rgba(99,102,241,0.5), inset 0 0 40px rgba(99,102,241,0.2); }
+}
+.glow-ring {
+  animation: glowRing 3s ease-in-out infinite;
+}
+
+/* Star field background */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Dopamine Guard dimming */
+.dopamine-dimmed {
+  filter: brightness(0.6);
+  transition: filter 0.5s ease;
+}
+
+/* Utility animations */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Glass morphism */
+.glass {
+  background: rgba(2, 6, 23, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+}
+.glass-card {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #6366f1, #22d3ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Night overlay for restless intervener */
+.night-overlay {
+  background: radial-gradient(ellipse at center, rgba(99,102,241,0.08) 0%, rgba(2,6,23,0.95) 70%);
+}
+
+/* Bar chart for sleep efficiency */
+.sleep-bar {
+  transition: height 0.8s ease-out, background-color 0.3s ease;
+}

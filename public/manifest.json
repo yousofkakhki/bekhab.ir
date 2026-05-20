@@ -1,0 +1,24 @@
+{
+  "name": "بِخواب - بهینه‌سازی خواب",
+  "short_name": "بِخواب",
+  "description": "با بِخواب زمان مناسب خواب خود را محاسبه کنید و با صداهای آرامش‌بخش بهتر بخوابید",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fefefe",
+  "theme_color": "#1eb980",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "fa",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
