@@ -1,12 +1,21 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Chromium flags so Web Audio actually starts in headless (no real speakers needed)
+const audioLaunch = {
+  args: [
+    '--autoplay-policy=no-user-gesture-required',
+    '--use-fake-ui-for-media-stream',
+    '--mute-audio',
+  ],
+};
+
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: true,
+  fullyParallel: false, // audio tests instrument globals; keep them serial
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  retries: 0,
+  workers: 1,
+  reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: 'http://localhost:3003',
     trace: 'on-first-retry',
@@ -15,8 +24,14 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'desktop',
+      use: { ...devices['Desktop Chrome'], launchOptions: audioLaunch },
+      testIgnore: '**/mobile-*.spec.ts',
+    },
+    {
+      name: 'mobile-android',
+      use: { ...devices['Pixel 5'], launchOptions: audioLaunch },
+      testMatch: '**/mobile-*.spec.ts',
     },
   ],
 
@@ -24,5 +39,6 @@ export default defineConfig({
     command: 'npm start',
     url: 'http://localhost:3003',
     reuseExistingServer: true,
+    timeout: 30_000,
   },
 });

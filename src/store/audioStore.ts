@@ -74,9 +74,9 @@ export const useAudioStore = create<AudioState>()(
       },
 
       clearAll: () => {
+        // حجم‌ها (تنظیمات کاربر) حفظ می‌شوند؛ فقط پخش و صداهای فعال پاک می‌شود
         set({
           activeSounds: new Map(),
-          volumes: {},
           isGlobalPlaying: false,
         });
       },

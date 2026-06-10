@@ -46,7 +46,7 @@ export const SOUNDS: SoundConfig[] = [
   {
     id: "soft-setar",
     name: "سه‌تار آرام",
-    icon: "�",
+    icon: "🪕",
     src: "/sounds/setar.mp3",
     defaultVolume: 0.3,
     color: "#f59e0b", // amber-500
@@ -73,7 +73,7 @@ export const SOUNDS: SoundConfig[] = [
   {
     id: "wind",
     name: "باد کویر",
-    icon: "�",
+    icon: "💨",
     src: "/sounds/wind.mp3",
     defaultVolume: 0.35,
     color: "#94a3b8", // slate-400
@@ -109,7 +109,7 @@ export const SOUNDS: SoundConfig[] = [
   {
     id: "birds",
     name: "پرندگان صبح",
-    icon: "�",
+    icon: "🐦",
     src: "/sounds/birds.mp3",
     defaultVolume: 0.3,
     color: "#86efac", // green-300
