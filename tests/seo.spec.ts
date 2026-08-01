@@ -11,6 +11,7 @@ test.describe('Crawl and social metadata', () => {
     const body = await sitemap.text();
     expect(body).toContain('<loc>https://bekhab.ir</loc>');
     expect(body).toContain('<loc>https://bekhab.ir/blog</loc>');
+    expect(body).not.toContain('<lastmod>');
   });
 
   test('uses the application dark theme in the web manifest', async ({ request }) => {
@@ -19,6 +20,21 @@ test.describe('Crawl and social metadata', () => {
     const manifest = await response.json();
     expect(manifest.background_color).toBe('#020617');
     expect(manifest.theme_color).toBe('#020617');
+    expect(manifest.orientation).toBeUndefined();
+  });
+
+  test('composes the resources page title once', async ({ page }) => {
+    await page.goto('/blog');
+    await expect(page).toHaveTitle('منابع معتبر خواب | بخواب');
+  });
+
+  test('only publishes structured data that matches visible product content', async ({ page }) => {
+    await page.goto('/');
+    const schemas = await page.locator('script[type="application/ld+json"]').allTextContents();
+    const parsed = schemas.map((schema) => JSON.parse(schema));
+
+    expect(parsed.some((schema) => schema['@type'] === 'FAQPage')).toBe(false);
+    expect(parsed.some((schema) => 'softwareVersion' in schema)).toBe(false);
   });
 
   test('serves a real 1200×630 social preview image', async ({ page, request }) => {

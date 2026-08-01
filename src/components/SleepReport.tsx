@@ -97,7 +97,7 @@ export default function SleepReport() {
         </h2>
         {trackerControls}
         <div className="glass rounded-2xl p-8 text-center max-w-md mx-auto">
-          <p className="text-white/40 text-sm">
+          <p className="text-white/60 text-sm">
             هنوز هیچ جلسه‌ای ثبت نشده.
             <br />
             از بخش ثبت حرکت شبانه استفاده کنید.
@@ -131,7 +131,7 @@ export default function SleepReport() {
                 ${
                   (selectedSession?.id || lastSession?.id) === s.id
                     ? "bg-indigo-500/30 text-indigo-300 border border-indigo-400/30"
-                    : "bg-white/5 text-white/40 hover:bg-white/10 border border-white/5"
+                    : "bg-white/5 text-white/60 hover:bg-white/10 border border-white/5"
                 }
               `}
             >
@@ -166,13 +166,13 @@ export default function SleepReport() {
             <p className="text-lg font-bold text-white/80">
               {persianDigits(session.spikes.length)}
             </p>
-            <p className="text-[10px] text-white/40">حرکت</p>
+            <p className="text-[10px] text-white/60">حرکت</p>
           </div>
           <div className="bg-white/5 rounded-xl p-3 text-center">
             <p className="text-lg font-bold text-white/80">
               {persianDigits(Math.round(duration / 3600000))}
             </p>
-            <p className="text-[10px] text-white/40">ساعت</p>
+            <p className="text-[10px] text-white/60">ساعت</p>
           </div>
           <div className="bg-white/5 rounded-xl p-3 text-center">
             <p className="text-lg font-bold text-white/80">
@@ -185,13 +185,13 @@ export default function SleepReport() {
                   : 0
               )}
             </p>
-            <p className="text-[10px] text-white/40">شدت میانگین</p>
+            <p className="text-[10px] text-white/60">شدت میانگین</p>
           </div>
         </div>
 
         {/* Bar chart */}
         <div className="mb-4">
-          <p className="text-xs text-white/40 mb-3">حرکت در طول شب</p>
+          <p className="text-xs text-white/60 mb-3">حرکت در طول شب</p>
           <div className="flex items-end gap-1 h-24">
             {buckets.map((bucket, i) => {
               const height = Math.max(4, (bucket.movement / maxMovement) * 100);
@@ -204,7 +204,7 @@ export default function SleepReport() {
                     className="w-full rounded-t-sm transition-all duration-300 sleep-bar"
                     style={{ height: `${height}%` }}
                   />
-                  <span className="text-[8px] text-white/30">{bucket.label}</span>
+                  <span className="text-[8px] text-white/60">{bucket.label}</span>
                 </div>
               );
             })}

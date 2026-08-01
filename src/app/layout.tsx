@@ -4,7 +4,6 @@ import {
   baseMetadata,
   generateSoftwareAppJsonLd,
   generateWebAppJsonLd,
-  generateFaqJsonLd,
 } from "@/lib/SEOConfig";
 import "./globals.css";
 
@@ -51,12 +50,6 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(generateWebAppJsonLd()),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(generateFaqJsonLd()),
           }}
         />
       </head>

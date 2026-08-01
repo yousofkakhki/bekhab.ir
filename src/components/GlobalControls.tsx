@@ -43,7 +43,7 @@ export default function GlobalControls() {
         <span className="text-white/80 text-sm font-medium">
           {activeSounds.size} صدای فعال
         </span>
-        <span className="text-xs text-white/30">
+        <span className="text-xs text-white/60">
           {isGlobalPlaying ? "در حال پخش" : "متوقف"}
         </span>
       </div>

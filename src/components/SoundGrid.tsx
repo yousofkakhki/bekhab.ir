@@ -25,7 +25,7 @@ export default function SoundGrid() {
         <h2 className="text-2xl md:text-3xl font-bold">
           <span className="gradient-text">صداهای آرامش‌بخش</span>
         </h2>
-        <p className="text-sm text-white/40 max-w-md">
+        <p className="text-sm text-white/60 max-w-md">
           صداهای طبیعی را ترکیب کنید و فضای صوتی دلخواه خود را بسازید
         </p>
 
@@ -105,7 +105,7 @@ export default function SoundGrid() {
 
               {/* نام */}
               <span className={`text-xs text-center font-medium ${
-                isActive ? "text-white/90" : "text-white/40"
+                isActive ? "text-white/90" : "text-white/60"
               }`}>
                 {sound.name}
               </span>
@@ -119,7 +119,7 @@ export default function SoundGrid() {
                              ${
                                isActive
                                  ? "bg-white/15 text-white border border-white/20"
-                                 : "bg-white/5 text-white/30 border border-white/10 hover:bg-white/10"
+                                 : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
                              }`}
                   aria-label={`${isActive ? "توقف" : "پخش"} ${sound.name}`}
                 >
@@ -144,7 +144,7 @@ export default function SoundGrid() {
                   dir="ltr"
                 />
 
-                <span className="text-white/30 flex-shrink-0">
+                <span className="text-white/60 flex-shrink-0">
                   {volume === 0 ? (
                     <TbVolume3 size={14} />
                   ) : volume < 0.5 ? (

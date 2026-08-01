@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "منابع معتبر خواب | بِخواب",
+  title: "منابع معتبر خواب",
   description:
     "پیوند به منابع معتبر و عمومی درباره خواب، کم‌خوابی و بی‌خوابی از CDC، NHLBI و NHS.",
   openGraph: {
@@ -79,7 +79,7 @@ export default function ResourcesPage() {
                   <span className="mb-2 block text-base font-bold text-white/90 transition-colors group-hover:text-indigo-300">
                     {resource.title}
                   </span>
-                  <span className="mb-3 block text-sm leading-relaxed text-white/40">
+                  <span className="mb-3 block text-sm leading-relaxed text-white/60">
                     {resource.description}
                   </span>
                   <span className="text-xs text-indigo-300">

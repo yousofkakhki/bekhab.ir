@@ -20,7 +20,7 @@ export default function Footer() {
                 بِ<span className="text-indigo-400">خواب</span>
               </span>
             </div>
-            <p className="text-xs text-white/30 leading-relaxed">
+            <p className="text-xs text-white/60 leading-relaxed">
               ابزارهای آرامش و برنامه‌ریزی خواب
             </p>
             <div className="flex items-center gap-3">
@@ -65,14 +65,14 @@ export default function Footer() {
         <div className="border-t border-white/5 pt-4" />
 
         {/* Bottom bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/25">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/60">
           <p>
             &copy; {year}، تمامی حقوق محفوظ است.{" "}
-            <span className="font-medium text-white/35">
+            <span className="font-medium text-white/60">
               ساخته شده با 💚 در ایران
             </span>
           </p>
-          <p dir="ltr" className="text-white/20">bekhab.ir</p>
+          <p dir="ltr" className="text-white/60">bekhab.ir</p>
         </div>
       </div>
     </footer>
@@ -83,13 +83,13 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
   const isInternal = href.startsWith("/");
   if (isInternal) {
     return (
-      <Link href={href} className="text-sm text-white/30 hover:text-indigo-400 transition-colors">
+      <Link href={href} className="text-sm text-white/60 hover:text-indigo-400 transition-colors">
         {children}
       </Link>
     );
   }
   return (
-    <a href={href} className="text-sm text-white/30 hover:text-indigo-400 transition-colors">
+    <a href={href} className="text-sm text-white/60 hover:text-indigo-400 transition-colors">
       {children}
     </a>
   );
@@ -111,7 +111,7 @@ function SocialIcon({
       rel="noopener noreferrer"
       aria-label={label}
       className="w-8 h-8 flex items-center justify-center rounded-full 
-                 bg-white/5 hover:bg-indigo-500/20 text-white/30 hover:text-indigo-400
+                 bg-white/5 hover:bg-indigo-500/20 text-white/60 hover:text-indigo-400
                  border border-white/5 hover:border-indigo-400/20
                  transition-all duration-300"
     >

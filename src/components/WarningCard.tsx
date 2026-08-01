@@ -11,7 +11,7 @@ export default function WarningCard() {
             <h3 className="text-amber-400 font-bold mb-2 text-sm">
               مدت خواب کوتاه است
             </h3>
-            <p className="text-white/40 text-xs leading-relaxed">
+            <p className="text-white/60 text-xs leading-relaxed">
               این گزینه کمتر از ۶ ساعت زمان خواب در نظر می‌گیرد. برای بیشتر
               بزرگسالان این مقدار از بازه پیشنهادی معمول کوتاه‌تر است.
             </p>

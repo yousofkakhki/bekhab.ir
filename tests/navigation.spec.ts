@@ -35,4 +35,24 @@ test.describe('Navigation integrity', () => {
     await expect(page.getByRole('link', { name: 'شروع کنید' })).toBeVisible();
     await expect(page.getByText('وقت خوابه 🌙', { exact: true })).toHaveCount(0);
   });
+
+  test('keeps focus mode clear of the sticky mobile header', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.goto('/');
+    await page.locator('button[aria-label^="پخش "]').first().click();
+
+    const focus = page.getByRole('button', { name: 'حالت تمرکز' });
+    const cta = page.getByRole('link', { name: 'شروع کنید' });
+    await expect(focus).toBeVisible();
+
+    const [focusBox, ctaBox] = await Promise.all([focus.boundingBox(), cta.boundingBox()]);
+    expect(focusBox).not.toBeNull();
+    expect(ctaBox).not.toBeNull();
+    const overlaps =
+      focusBox!.x < ctaBox!.x + ctaBox!.width &&
+      focusBox!.x + focusBox!.width > ctaBox!.x &&
+      focusBox!.y < ctaBox!.y + ctaBox!.height &&
+      focusBox!.y + focusBox!.height > ctaBox!.y;
+    expect(overlaps).toBe(false);
+  });
 });

@@ -68,17 +68,17 @@ export function FocusModeOverlay({ onExit }: FocusModeProps) {
                  justify-center cursor-pointer animate-fadeIn"
       onClick={onExit}
     >
-      <div className="text-white/15 text-8xl md:text-9xl font-light tracking-wider tabular-nums">
+      <div className="text-white/60 text-8xl md:text-9xl font-light tracking-wider tabular-nums">
         {currentTime}
       </div>
 
       <div className="mt-8 flex items-center gap-3">
         <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulseGentle" />
-        <span className="text-white/10 text-sm">در حال پخش</span>
+        <span className="text-white/60 text-sm">در حال پخش</span>
         <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulseGentle" />
       </div>
 
-      <p className="absolute bottom-8 text-white/10 text-xs">
+      <p className="absolute bottom-8 text-white/60 text-xs">
         برای خروج کلیک کنید یا Escape بزنید
       </p>
     </div>

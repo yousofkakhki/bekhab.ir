@@ -148,7 +148,7 @@ export default function SleepCalculator() {
                   })}
                 </div>
 
-                <p className="mt-4 text-xs text-white/25 text-center">
+                <p className="mt-4 text-xs text-white/60 text-center">
                   💡 با فرض چرخه ۹۰ دقیقه‌ای و حدود ۱۵ دقیقه زمان به خواب رفتن
                 </p>
 
@@ -164,7 +164,7 @@ export default function SleepCalculator() {
             <span className="text-indigo-400">زمان‌های تقریبی خواب</span>
           </h2>
 
-          <p className="text-white/40 text-center lg:text-right max-w-xl text-sm leading-relaxed">
+          <p className="text-white/60 text-center lg:text-right max-w-xl text-sm leading-relaxed">
             این محاسبه با فرض چرخه‌های ۹۰ دقیقه‌ای و ۱۵ دقیقه زمان به خواب رفتن
             انجام می‌شود. چرخه خواب در افراد متفاوت است؛ نتیجه فقط یک تخمین
             برای برنامه‌ریزی است.

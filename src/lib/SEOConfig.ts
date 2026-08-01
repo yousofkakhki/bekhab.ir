@@ -108,7 +108,6 @@ export function generateWebAppJsonLd() {
     url: siteConfig.url,
     description: siteConfig.description,
     browserRequirements: "Requires JavaScript. Requires HTML5.",
-    softwareVersion: "2.0.0",
     applicationCategory: "LifestyleApplication",
     inLanguage: "fa",
     isAccessibleForFree: true,
@@ -117,40 +116,6 @@ export function generateWebAppJsonLd() {
       "پخش صداهای آرامش‌بخش",
       "ثبت حرکت شبانه روی دستگاه",
       "راهنمای تنفس ۴-۷-۸",
-    ],
-  };
-}
-
-/** JSON-LD: FAQPage for SEO */
-export function generateFaqJsonLd() {
-  return {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "چطور زمان مناسب خواب را محاسبه کنم؟",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "بخواب با فرض چرخه‌های ۹۰ دقیقه‌ای و حدود ۱۵ دقیقه زمان به خواب رفتن، چند زمان تقریبی نمایش می‌دهد. طول چرخه‌ها در افراد متفاوت است.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "بخش صداهای آرامش‌بخش چه کاری انجام می‌دهد؟",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "این بخش امکان پخش هم‌زمان چند صدای محیطی، تنظیم جداگانه حجم و ذخیره یک ترکیب دلخواه را فراهم می‌کند.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "تنفس ۴-۷-۸ چیست؟",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "یک الگوی زمان‌بندی‌شده شامل ۴ ثانیه دم، ۷ ثانیه نگه‌داشتن نفس و ۸ ثانیه بازدم است. راهنمای داخل برنامه مراحل را نمایش می‌دهد.",
-        },
-      },
     ],
   };
 }
