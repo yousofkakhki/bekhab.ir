@@ -16,20 +16,41 @@ async function installMotionHarness(page: Page, initialTime: number) {
   }, initialTime);
 }
 
-async function emitValidMinuteOfMotionData(page: Page) {
-  await page.waitForFunction(() => '__bekhabMotionReady' in window);
-  await page.evaluate(() => {
-    for (let index = 0; index < 13; index += 1) {
+async function emitMotionSamples(page: Page, gapsBeforeSamples: number[]) {
+  await page.evaluate((gaps) => {
+    for (const gap of gaps) {
+      (window as unknown as { __advanceTrackerTime: (milliseconds: number) => void })
+        .__advanceTrackerTime(gap);
       const event = new Event('devicemotion');
       Object.defineProperty(event, 'accelerationIncludingGravity', {
         value: { x: 0, y: 0, z: 9.81 },
       });
       window.dispatchEvent(event);
-      if (index < 12) {
-        (window as unknown as { __advanceTrackerTime: (milliseconds: number) => void })
-          .__advanceTrackerTime(5_000);
-      }
     }
+  }, gapsBeforeSamples);
+}
+
+async function getStoredSessions(page: Page) {
+  return page.evaluate(async () => {
+    const request = indexedDB.open('bekhab-sleep', 1);
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const getAllRequest = db.transaction('sessions').objectStore('sessions').getAll();
+    const sessions = await new Promise<Record<string, unknown>[]>((resolve, reject) => {
+      getAllRequest.onsuccess = () => resolve(getAllRequest.result);
+      getAllRequest.onerror = () => reject(getAllRequest.error);
+    });
+    db.close();
+    return sessions;
+  });
+}
+
+async function emitValidMinuteOfMotionData(page: Page) {
+  await page.waitForFunction(() => '__bekhabMotionReady' in window);
+  await emitMotionSamples(page, [0, ...Array<number>(12).fill(5_000)]);
+  await page.evaluate(() => {
     (window as unknown as { __advanceTrackerTime: (milliseconds: number) => void })
       .__advanceTrackerTime(1);
   });
@@ -309,6 +330,30 @@ test.describe('Sleep tracker', () => {
     await expect(page.getByText('شاخص این جلسه', { exact: true })).toHaveCount(0);
   });
 
+  for (const { name, gaps } of [
+    {
+      name: 'does not score samples that start after an excessive sensor gap',
+      gaps: [11_000, ...Array<number>(15).fill(4_000)],
+    },
+    {
+      name: 'does not score samples with an excessive gap during tracking',
+      gaps: [0, 11_000, ...Array<number>(14).fill(4_000)],
+    },
+  ]) {
+    test(name, async ({ page }) => {
+      await installMotionHarness(page, 1_000_000);
+      await page.goto('/');
+      await page.getByRole('button', { name: 'شروع ثبت حرکت شبانه' }).click();
+      await page.waitForFunction(() => '__bekhabMotionReady' in window);
+
+      await emitMotionSamples(page, gaps);
+      await page.getByRole('button', { name: 'پایان و ذخیره حرکت‌ها' }).click();
+
+      await expect(page.getByText('داده سنسور برای محاسبه شاخص کافی نبود', { exact: true })).toBeVisible();
+      await expect(page.getByText('شاخص این جلسه', { exact: true })).toHaveCount(0);
+    });
+  }
+
   test('does not render unverified legacy sessions as movement scores', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(async () => {
@@ -342,6 +387,13 @@ test.describe('Sleep tracker', () => {
 
     await expect(page.getByText('شاخص این جلسه', { exact: true })).toHaveCount(0);
     await expect(page.getByText('هنوز هیچ جلسه‌ای ثبت نشده.')).toBeVisible();
+    await expect
+      .poll(async () =>
+        (await getStoredSessions(page)).some(
+          (session) => session.id === 'legacy-unverified-session'
+        )
+      )
+      .toBe(true);
   });
 
   test('renders one movement bucket for a session contained within one hour', async ({ page }) => {
@@ -458,5 +510,12 @@ test.describe('Sleep tracker', () => {
     await page.getByRole('button', { name: 'پایان و ذخیره حرکت‌ها' }).click();
 
     await expect(page.getByRole('button', { name: '۲ ژانویه' })).toBeVisible();
+    await expect
+      .poll(async () =>
+        (await getStoredSessions(page)).find(
+          (session) => session.startTime === currentStart
+        )?.maxSampleGap
+      )
+      .toBe(5_000);
   });
 });
