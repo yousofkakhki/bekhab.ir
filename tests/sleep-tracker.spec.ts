@@ -1,4 +1,35 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+async function installMotionHarness(page: Page, initialTime: number) {
+  await page.addInitScript((time) => {
+    let now = time;
+    Date.now = () => now;
+    Object.assign(window, {
+      __advanceTrackerTime: (milliseconds: number) => {
+        now += milliseconds;
+      },
+    });
+    Object.defineProperty(window, 'DeviceMotionEvent', {
+      configurable: true,
+      value: class DeviceMotionEvent extends Event {},
+    });
+  }, initialTime);
+}
+
+async function emitValidMinuteOfMotionData(page: Page) {
+  await page.waitForFunction(() => '__bekhabMotionHandler' in window);
+  await page.evaluate(() => {
+    for (let index = 0; index < 13; index += 1) {
+      const event = new Event('devicemotion');
+      Object.defineProperty(event, 'accelerationIncludingGravity', {
+        value: { x: 0, y: 0, z: 9.81 },
+      });
+      window.dispatchEvent(event);
+    }
+    (window as unknown as { __advanceTrackerTime: (milliseconds: number) => void })
+      .__advanceTrackerTime(60_001);
+  });
+}
 
 test.describe('Sleep tracker', () => {
   test('exposes controls that let the user start a tracking session', async ({ page }) => {
@@ -189,5 +220,82 @@ test.describe('Sleep tracker', () => {
 
     await expect(page.getByText('شاخص این جلسه', { exact: true })).toBeVisible();
     await expect(page.locator('.sleep-bar')).toHaveCount(1);
+  });
+
+  test('saves a valid active session before internal navigation unmounts the tracker', async ({ page }) => {
+    await installMotionHarness(page, new Date(2026, 0, 2, 1, 10).getTime());
+    await page.goto('/');
+    await page.getByRole('button', { name: 'شروع ثبت حرکت شبانه' }).click();
+    await emitValidMinuteOfMotionData(page);
+
+    await page.getByRole('link', { name: 'منابع خواب' }).click();
+    await expect(page).toHaveURL('/blog');
+    await page.goBack();
+
+    await expect(page.getByText('شاخص این جلسه', { exact: true })).toBeVisible();
+  });
+
+  test('saves before navigation when wake lock release throws', async ({ page }) => {
+    await installMotionHarness(page, new Date(2026, 0, 2, 1, 10).getTime());
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'wakeLock', {
+        configurable: true,
+        value: {
+          request: async () => ({
+            release: () => {
+              throw new Error('wake lock release failed');
+            },
+          }),
+        },
+      });
+    });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'شروع ثبت حرکت شبانه' }).click();
+    await emitValidMinuteOfMotionData(page);
+
+    await page.getByRole('link', { name: 'منابع خواب' }).click();
+    await expect(page).toHaveURL('/blog');
+    await page.goBack();
+
+    await expect(page.getByText('شاخص این جلسه', { exact: true })).toBeVisible();
+  });
+
+  test('adds a newly saved session to the selector without reloading', async ({ page }) => {
+    const currentStart = new Date(2026, 0, 2, 1, 10).getTime();
+    await installMotionHarness(page, currentStart);
+    await page.goto('/');
+    await page.evaluate(async () => {
+      const oldStart = new Date(2026, 0, 1, 1, 10).getTime();
+      const request = indexedDB.open('bekhab-sleep', 1);
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        request.onupgradeneeded = () => {
+          if (!request.result.objectStoreNames.contains('sessions')) {
+            request.result.createObjectStore('sessions', { keyPath: 'id' });
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const transaction = db.transaction('sessions', 'readwrite');
+      transaction.objectStore('sessions').put({
+        id: 'old-session',
+        startTime: oldStart,
+        endTime: oldStart + 60_001,
+        spikes: [],
+        efficiency: 100,
+      });
+      await new Promise<void>((resolve, reject) => {
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+      });
+      db.close();
+    });
+    await page.reload();
+
+    await page.getByRole('button', { name: 'شروع ثبت حرکت شبانه' }).click();
+    await emitValidMinuteOfMotionData(page);
+    await page.getByRole('button', { name: 'پایان و ذخیره حرکت‌ها' }).click();
+
+    await expect(page.getByRole('button', { name: '۲ ژانویه' })).toBeVisible();
   });
 });

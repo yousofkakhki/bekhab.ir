@@ -158,8 +158,14 @@ export function useSleepTracker() {
   }, []);
 
   const releaseWakeLock = useCallback(() => {
-    wakeLockRef.current?.release();
+    const wakeLock = wakeLockRef.current;
     wakeLockRef.current = null;
+    if (!wakeLock) return;
+    try {
+      void wakeLock.release().catch(() => {});
+    } catch {
+      // WakeLock cleanup is best-effort and must not interrupt session persistence.
+    }
   }, []);
 
   // Start tracking
@@ -240,16 +246,16 @@ export function useSleepTracker() {
     const duration = endTime - startTimeRef.current;
     if (motionSamplesRef.current === 0) {
       setError("هیچ داده‌ای از سنسور حرکت دریافت نشد");
-      return;
+      return false;
     }
     if (duration < MIN_SESSION_DURATION_MS) {
       setError("برای محاسبه شاخص، دست‌کم یک دقیقه داده لازم است");
-      return;
+      return false;
     }
     const minimumSamples = Math.ceil(duration / MAX_AVERAGE_SAMPLE_INTERVAL_MS);
     if (motionSamplesRef.current < minimumSamples) {
       setError("داده سنسور برای محاسبه شاخص کافی نبود");
-      return;
+      return false;
     }
     const efficiency = calculateMovementScore(spikesRef.current, duration);
 
@@ -264,10 +270,65 @@ export function useSleepTracker() {
     try {
       await saveSession(session);
       setLastSession(session);
+      return true;
     } catch {
       setError("خطا در ذخیره‌سازی اطلاعات خواب");
+      return false;
     }
   }, [releaseWakeLock]);
+
+  useEffect(() => {
+    if (!isTracking) return;
+
+    let navigationPending = false;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (navigationPending) return;
+      event.preventDefault();
+      event.returnValue = true;
+    };
+    const saveBeforeNavigation = (event: MouseEvent) => {
+      if (
+        navigationPending ||
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        !(event.target instanceof Element)
+      ) {
+        return;
+      }
+
+      const anchor = event.target.closest<HTMLAnchorElement>("a[href]");
+      if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+
+      const destination = new URL(anchor.href, window.location.href);
+      const current = new URL(window.location.href);
+      const changesDocument =
+        destination.origin !== current.origin ||
+        destination.pathname !== current.pathname ||
+        destination.search !== current.search;
+      if (!changesDocument) return;
+
+      event.preventDefault();
+      navigationPending = true;
+      void stopTracking().then((saved) => {
+        if (saved) {
+          window.location.assign(destination.href);
+        } else {
+          navigationPending = false;
+        }
+      });
+    };
+
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    document.addEventListener("click", saveBeforeNavigation, true);
+    return () => {
+      window.removeEventListener("beforeunload", warnBeforeUnload);
+      document.removeEventListener("click", saveBeforeNavigation, true);
+    };
+  }, [isTracking, stopTracking]);
 
   // Load all sessions
   const loadAllSessions = useCallback(async () => {

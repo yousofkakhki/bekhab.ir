@@ -40,16 +40,34 @@ export default function SleepReport() {
     stopTracking,
     loadAllSessions,
   } = useSleepTracker();
-  const [sessions, setSessions] = useState<SleepSession[]>([]);
+  const [storedSessions, setStoredSessions] = useState<SleepSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<SleepSession | null>(null);
 
   useEffect(() => {
     loadAllSessions()
       .then((all) => {
-        setSessions(all.sort((a, b) => b.startTime - a.startTime).slice(0, 7));
+        setStoredSessions(all.sort((a, b) => b.startTime - a.startTime).slice(0, 7));
       })
-      .catch(() => setSessions([]));
+      .catch(() => setStoredSessions([]));
   }, [loadAllSessions]);
+
+  const sessions = useMemo(() => {
+    const previous = lastSession
+      ? storedSessions.filter((item) => item.id !== lastSession.id)
+      : storedSessions;
+    return [...(lastSession ? [lastSession] : []), ...previous]
+      .sort((a, b) => b.startTime - a.startTime)
+      .slice(0, 7);
+  }, [lastSession, storedSessions]);
+
+  const toggleTracking = async () => {
+    if (isTracking) {
+      setSelectedSession(null);
+      await stopTracking();
+    } else {
+      await startTracking();
+    }
+  };
 
   const session = selectedSession || lastSession;
   const buckets = useMemo(
@@ -67,7 +85,7 @@ export default function SleepReport() {
       </p>
       <button
         type="button"
-        onClick={() => void (isTracking ? stopTracking() : startTracking())}
+        onClick={() => void toggleTracking()}
         className={`rounded-full px-6 py-3 text-sm font-medium transition-colors ${
           isTracking
             ? "border border-rose-400/30 bg-rose-500/20 text-rose-200 hover:bg-rose-500/30"
