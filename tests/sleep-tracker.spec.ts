@@ -114,6 +114,101 @@ test.describe('Sleep tracker', () => {
       .toBe(1);
   });
 
+  test('cancels a pending start when tracking is stopped', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(window, 'DeviceMotionEvent', {
+        configurable: true,
+        value: class DeviceMotionEvent extends Event {},
+      });
+      const state = { requested: 0, released: 0, resolve: null as null | (() => void) };
+      Object.defineProperty(window, '__pendingWakeLockProbe', { value: state });
+      Object.defineProperty(navigator, 'wakeLock', {
+        configurable: true,
+        value: {
+          request: () => {
+            state.requested += 1;
+            return new Promise((resolve) => {
+              state.resolve = () => resolve({
+                release: async () => {
+                  state.released += 1;
+                },
+              });
+            });
+          },
+        },
+      });
+    });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'شروع ثبت حرکت شبانه' }).click();
+    await expect.poll(() => page.evaluate(() =>
+      (window as unknown as { __pendingWakeLockProbe: { requested: number } })
+        .__pendingWakeLockProbe.requested
+    )).toBe(1);
+
+    await page.getByRole('button', { name: 'پایان و ذخیره حرکت‌ها' }).click();
+    await page.evaluate(() =>
+      (window as unknown as { __pendingWakeLockProbe: { resolve: () => void } })
+        .__pendingWakeLockProbe.resolve()
+    );
+
+    await expect.poll(() => page.evaluate(() =>
+      (window as unknown as { __pendingWakeLockProbe: { released: number } })
+        .__pendingWakeLockProbe.released
+    )).toBe(1);
+    await expect.poll(() => page.evaluate(() => '__bekhabMotionHandler' in window)).toBe(false);
+  });
+
+  test('starts session duration after motion permission is granted', async ({ page }) => {
+    await page.addInitScript(() => {
+      let now = 1_000_000;
+      let grantPermission: (() => void) | null = null;
+      let permissionRequested = false;
+      class MockDeviceMotionEvent extends Event {
+        static requestPermission = () => new Promise<string>((resolve) => {
+          permissionRequested = true;
+          grantPermission = () => resolve('granted');
+        });
+      }
+      Date.now = () => now;
+      Object.assign(window, {
+        __grantMotionPermission: () => grantPermission?.(),
+        __motionPermissionRequested: () => permissionRequested,
+        __advanceTrackerTime: (milliseconds: number) => {
+          now += milliseconds;
+        },
+      });
+      Object.defineProperty(window, 'DeviceMotionEvent', {
+        configurable: true,
+        value: MockDeviceMotionEvent,
+      });
+    });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'شروع ثبت حرکت شبانه' }).click();
+    await page.waitForFunction(() =>
+      (window as unknown as { __motionPermissionRequested: () => boolean })
+        .__motionPermissionRequested()
+    );
+    await page.evaluate(() => {
+      (window as unknown as { __advanceTrackerTime: (milliseconds: number) => void })
+        .__advanceTrackerTime(60_001);
+      (window as unknown as { __grantMotionPermission: () => void }).__grantMotionPermission();
+    });
+    await page.waitForFunction(() => '__bekhabMotionHandler' in window);
+    await page.evaluate(() => {
+      for (let index = 0; index < 13; index += 1) {
+        const event = new Event('devicemotion');
+        Object.defineProperty(event, 'accelerationIncludingGravity', {
+          value: { x: 0, y: 0, z: 9.81 },
+        });
+        window.dispatchEvent(event);
+      }
+    });
+    await page.getByRole('button', { name: 'پایان و ذخیره حرکت‌ها' }).click();
+
+    await expect(page.getByText('برای محاسبه شاخص، دست‌کم یک دقیقه داده لازم است', { exact: true })).toBeVisible();
+    await expect(page.getByText('شاخص این جلسه', { exact: true })).toHaveCount(0);
+  });
+
   test('does not create a movement score when the sensor emits no data', async ({ page }) => {
     await page.addInitScript(() => {
       Object.defineProperty(window, 'DeviceMotionEvent', {
@@ -187,6 +282,41 @@ test.describe('Sleep tracker', () => {
     await expect(page.getByText('شاخص این جلسه', { exact: true })).toHaveCount(0);
   });
 
+  test('does not render unverified legacy sessions as movement scores', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(async () => {
+      const startTime = new Date(2025, 0, 1, 1, 10).getTime();
+      const request = indexedDB.open('bekhab-sleep', 1);
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        request.onupgradeneeded = () => {
+          if (!request.result.objectStoreNames.contains('sessions')) {
+            request.result.createObjectStore('sessions', { keyPath: 'id' });
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const transaction = db.transaction('sessions', 'readwrite');
+      transaction.objectStore('sessions').put({
+        id: 'legacy-unverified-session',
+        startTime,
+        endTime: startTime + 10 * 60_000,
+        spikes: [],
+        efficiency: 100,
+      });
+      await new Promise<void>((resolve, reject) => {
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+      });
+      db.close();
+    });
+
+    await page.reload();
+
+    await expect(page.getByText('شاخص این جلسه', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('هنوز هیچ جلسه‌ای ثبت نشده.')).toBeVisible();
+  });
+
   test('renders one movement bucket for a session contained within one hour', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(async () => {
@@ -207,6 +337,7 @@ test.describe('Sleep tracker', () => {
         startTime,
         endTime: startTime + 10 * 60_000,
         spikes: [],
+        sampleCount: 120,
         efficiency: 100,
       });
       await new Promise<void>((resolve, reject) => {
@@ -282,6 +413,7 @@ test.describe('Sleep tracker', () => {
         startTime: oldStart,
         endTime: oldStart + 60_001,
         spikes: [],
+        sampleCount: 13,
         efficiency: 100,
       });
       await new Promise<void>((resolve, reject) => {

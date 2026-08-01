@@ -14,6 +14,7 @@ export interface SleepSession {
   startTime: number;
   endTime: number;
   spikes: MovementSpike[];
+  sampleCount: number;
   efficiency: number; // persisted movement-calmness index (legacy field name), 0-100
 }
 
@@ -59,7 +60,7 @@ async function getLatestSession(): Promise<SleepSession | null> {
     const store = tx.objectStore(STORE_NAME);
     const request = store.getAll();
     request.onsuccess = () => {
-      const all = request.result as SleepSession[];
+      const all = request.result.filter(isVerifiedSession);
       if (all.length === 0) return resolve(null);
       all.sort((a, b) => b.startTime - a.startTime);
       resolve(all[0]);
@@ -73,7 +74,7 @@ async function getAllSessions(): Promise<SleepSession[]> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readonly");
     const request = tx.objectStore(STORE_NAME).getAll();
-    request.onsuccess = () => resolve(request.result as SleepSession[]);
+    request.onsuccess = () => resolve(request.result.filter(isVerifiedSession));
     request.onerror = () => reject(request.error);
   });
 }
@@ -82,6 +83,48 @@ async function getAllSessions(): Promise<SleepSession[]> {
 const SPIKE_THRESHOLD = 1.5; // m/s² above baseline gravity
 const MIN_SESSION_DURATION_MS = 60_000;
 const MAX_AVERAGE_SAMPLE_INTERVAL_MS = 5_000;
+
+function isVerifiedSession(value: unknown): value is SleepSession {
+  if (!value || typeof value !== "object") return false;
+  const session = value as Partial<SleepSession>;
+  if (
+    typeof session.id !== "string" ||
+    !Number.isFinite(session.startTime) ||
+    !Number.isFinite(session.endTime) ||
+    !Number.isFinite(session.efficiency) ||
+    !Number.isInteger(session.sampleCount) ||
+    !Array.isArray(session.spikes)
+  ) {
+    return false;
+  }
+
+  const duration = session.endTime! - session.startTime!;
+  const minimumSamples = Math.ceil(duration / MAX_AVERAGE_SAMPLE_INTERVAL_MS);
+  return (
+    duration >= MIN_SESSION_DURATION_MS &&
+    session.efficiency! >= 0 &&
+    session.efficiency! <= 100 &&
+    session.sampleCount! >= minimumSamples &&
+    session.spikes.length <= session.sampleCount! &&
+    session.spikes.every(
+      (spike) =>
+        spike &&
+        Number.isFinite(spike.timestamp) &&
+        Number.isFinite(spike.magnitude) &&
+        spike.timestamp >= session.startTime! &&
+        spike.timestamp <= session.endTime!,
+    )
+  );
+}
+
+function safelyReleaseWakeLock(wakeLock: WakeLockSentinel | null): void {
+  if (!wakeLock) return;
+  try {
+    void wakeLock.release().catch(() => {});
+  } catch {
+    // WakeLock cleanup is best-effort and must not interrupt session persistence.
+  }
+}
 
 function computeMagnitude(x: number, y: number, z: number): number {
   // Remove gravity (~9.81) — use accelerationIncludingGravity and subtract
@@ -140,6 +183,8 @@ export function useSleepTracker() {
   const motionSamplesRef = useRef(0);
   const startTimeRef = useRef<number>(0);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const motionHandlerRef = useRef<((event: DeviceMotionEvent) => void) | null>(null);
+  const trackingRunRef = useRef(0);
 
   // Load latest session on mount
   useEffect(() => {
@@ -150,34 +195,48 @@ export function useSleepTracker() {
   const requestWakeLock = useCallback(async () => {
     try {
       if ("wakeLock" in navigator) {
-        wakeLockRef.current = await navigator.wakeLock.request("screen");
+        return await navigator.wakeLock.request("screen");
       }
     } catch {
       // WakeLock not supported or denied — non-critical
     }
+    return null;
   }, []);
 
   const releaseWakeLock = useCallback(() => {
     const wakeLock = wakeLockRef.current;
     wakeLockRef.current = null;
-    if (!wakeLock) return;
-    try {
-      void wakeLock.release().catch(() => {});
-    } catch {
-      // WakeLock cleanup is best-effort and must not interrupt session persistence.
+    safelyReleaseWakeLock(wakeLock);
+  }, []);
+
+  const removeMotionListener = useCallback(() => {
+    const handler = motionHandlerRef.current;
+    motionHandlerRef.current = null;
+    if (handler) {
+      window.removeEventListener("devicemotion", handler);
     }
+    delete (window as unknown as Record<string, unknown>).__bekhabMotionHandler;
   }, []);
 
   // Start tracking
   const startTracking = useCallback(async () => {
+    const runId = trackingRunRef.current + 1;
+    trackingRunRef.current = runId;
+    removeMotionListener();
+    releaseWakeLock();
     spikesRef.current = [];
     motionSamplesRef.current = 0;
-    startTimeRef.current = Date.now();
+    startTimeRef.current = 0;
     setIsTracking(true);
     setError(null);
 
     // Request wake lock
-    await requestWakeLock();
+    const wakeLock = await requestWakeLock();
+    if (trackingRunRef.current !== runId) {
+      safelyReleaseWakeLock(wakeLock);
+      return;
+    }
+    wakeLockRef.current = wakeLock;
 
     // Check for DeviceMotion support
     if (typeof window === "undefined" || !("DeviceMotionEvent" in window)) {
@@ -194,6 +253,10 @@ export function useSleepTracker() {
     if (typeof DME.requestPermission === "function") {
       try {
         const perm = await DME.requestPermission();
+        if (trackingRunRef.current !== runId) {
+          if (wakeLockRef.current === wakeLock) releaseWakeLock();
+          return;
+        }
         if (perm !== "granted") {
           setError("دسترسی به سنسور حرکت رد شد");
           setIsTracking(false);
@@ -201,6 +264,10 @@ export function useSleepTracker() {
           return;
         }
       } catch {
+        if (trackingRunRef.current !== runId) {
+          if (wakeLockRef.current === wakeLock) releaseWakeLock();
+          return;
+        }
         setError("خطا در درخواست دسترسی سنسور");
         setIsTracking(false);
         releaseWakeLock();
@@ -209,6 +276,7 @@ export function useSleepTracker() {
     }
 
     const handler = (event: DeviceMotionEvent) => {
+      if (trackingRunRef.current !== runId) return;
       const acc = event.accelerationIncludingGravity;
       if (!acc || acc.x == null || acc.y == null || acc.z == null) return;
 
@@ -222,25 +290,21 @@ export function useSleepTracker() {
       }
     };
 
+    if (trackingRunRef.current !== runId) return;
+    startTimeRef.current = Date.now();
+    motionHandlerRef.current = handler;
     window.addEventListener("devicemotion", handler);
 
-    // Store cleanup reference
+    // Expose only as a readiness marker for browser diagnostics and tests.
     (window as unknown as Record<string, unknown>).__bekhabMotionHandler = handler;
-  }, [releaseWakeLock, requestWakeLock]);
+  }, [releaseWakeLock, removeMotionListener, requestWakeLock]);
 
   // Stop tracking and save session
   const stopTracking = useCallback(async () => {
+    trackingRunRef.current += 1;
     setIsTracking(false);
     releaseWakeLock();
-
-    // Remove listener
-    const handler = (window as unknown as Record<string, unknown>).__bekhabMotionHandler as
-      | EventListener
-      | undefined;
-    if (handler) {
-      window.removeEventListener("devicemotion", handler);
-      delete (window as unknown as Record<string, unknown>).__bekhabMotionHandler;
-    }
+    removeMotionListener();
 
     const endTime = Date.now();
     const duration = endTime - startTimeRef.current;
@@ -264,6 +328,7 @@ export function useSleepTracker() {
       startTime: startTimeRef.current,
       endTime,
       spikes: spikesRef.current,
+      sampleCount: motionSamplesRef.current,
       efficiency,
     };
 
@@ -275,7 +340,7 @@ export function useSleepTracker() {
       setError("خطا در ذخیره‌سازی اطلاعات خواب");
       return false;
     }
-  }, [releaseWakeLock]);
+  }, [releaseWakeLock, removeMotionListener]);
 
   useEffect(() => {
     if (!isTracking) return;
@@ -337,16 +402,11 @@ export function useSleepTracker() {
 
   useEffect(() => {
     return () => {
+      trackingRunRef.current += 1;
       releaseWakeLock();
-      const handler = (window as unknown as Record<string, unknown>).__bekhabMotionHandler as
-        | EventListener
-        | undefined;
-      if (handler) {
-        window.removeEventListener("devicemotion", handler);
-        delete (window as unknown as Record<string, unknown>).__bekhabMotionHandler;
-      }
+      removeMotionListener();
     };
-  }, [releaseWakeLock]);
+  }, [releaseWakeLock, removeMotionListener]);
 
   return {
     isTracking,
