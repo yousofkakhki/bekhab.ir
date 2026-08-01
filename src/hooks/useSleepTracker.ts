@@ -15,6 +15,7 @@ export interface SleepSession {
   endTime: number;
   spikes: MovementSpike[];
   sampleCount: number;
+  maxSampleGap: number;
   efficiency: number; // persisted movement-calmness index (legacy field name), 0-100
 }
 
@@ -83,6 +84,7 @@ async function getAllSessions(): Promise<SleepSession[]> {
 const SPIKE_THRESHOLD = 1.5; // m/s² above baseline gravity
 const MIN_SESSION_DURATION_MS = 60_000;
 const MAX_AVERAGE_SAMPLE_INTERVAL_MS = 5_000;
+const MAX_SAMPLE_GAP_MS = 10_000;
 
 function isVerifiedSession(value: unknown): value is SleepSession {
   if (!value || typeof value !== "object") return false;
@@ -92,6 +94,7 @@ function isVerifiedSession(value: unknown): value is SleepSession {
     !Number.isFinite(session.startTime) ||
     !Number.isFinite(session.endTime) ||
     !Number.isFinite(session.efficiency) ||
+    !Number.isFinite(session.maxSampleGap) ||
     !Number.isInteger(session.sampleCount) ||
     !Array.isArray(session.spikes)
   ) {
@@ -105,6 +108,8 @@ function isVerifiedSession(value: unknown): value is SleepSession {
     session.efficiency! >= 0 &&
     session.efficiency! <= 100 &&
     session.sampleCount! >= minimumSamples &&
+    session.maxSampleGap! >= 0 &&
+    session.maxSampleGap! <= MAX_SAMPLE_GAP_MS &&
     session.spikes.length <= session.sampleCount! &&
     session.spikes.every(
       (spike) =>
@@ -182,6 +187,8 @@ export function useSleepTracker() {
   const spikesRef = useRef<MovementSpike[]>([]);
   const motionSamplesRef = useRef(0);
   const startTimeRef = useRef<number>(0);
+  const lastSampleTimeRef = useRef<number>(0);
+  const maxSampleGapRef = useRef(0);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const motionHandlerRef = useRef<((event: DeviceMotionEvent) => void) | null>(null);
   const trackingRunRef = useRef(0);
@@ -215,7 +222,7 @@ export function useSleepTracker() {
     if (handler) {
       window.removeEventListener("devicemotion", handler);
     }
-    delete (window as unknown as Record<string, unknown>).__bekhabMotionHandler;
+    delete (window as unknown as Record<string, unknown>).__bekhabMotionReady;
   }, []);
 
   // Start tracking
@@ -227,6 +234,8 @@ export function useSleepTracker() {
     spikesRef.current = [];
     motionSamplesRef.current = 0;
     startTimeRef.current = 0;
+    lastSampleTimeRef.current = 0;
+    maxSampleGapRef.current = 0;
     setIsTracking(true);
     setError(null);
 
@@ -280,11 +289,17 @@ export function useSleepTracker() {
       const acc = event.accelerationIncludingGravity;
       if (!acc || acc.x == null || acc.y == null || acc.z == null) return;
 
+      const sampleTime = Date.now();
+      maxSampleGapRef.current = Math.max(
+        maxSampleGapRef.current,
+        sampleTime - lastSampleTimeRef.current,
+      );
+      lastSampleTimeRef.current = sampleTime;
       motionSamplesRef.current += 1;
       const magnitude = Math.abs(computeMagnitude(acc.x, acc.y, acc.z));
       if (magnitude > SPIKE_THRESHOLD) {
         spikesRef.current.push({
-          timestamp: Date.now(),
+          timestamp: sampleTime,
           magnitude,
         });
       }
@@ -292,11 +307,12 @@ export function useSleepTracker() {
 
     if (trackingRunRef.current !== runId) return;
     startTimeRef.current = Date.now();
+    lastSampleTimeRef.current = startTimeRef.current;
     motionHandlerRef.current = handler;
     window.addEventListener("devicemotion", handler);
 
-    // Expose only as a readiness marker for browser diagnostics and tests.
-    (window as unknown as Record<string, unknown>).__bekhabMotionHandler = handler;
+    // Expose only a boolean readiness marker for browser diagnostics and tests.
+    (window as unknown as Record<string, unknown>).__bekhabMotionReady = true;
   }, [releaseWakeLock, removeMotionListener, requestWakeLock]);
 
   // Stop tracking and save session
@@ -317,7 +333,14 @@ export function useSleepTracker() {
       return false;
     }
     const minimumSamples = Math.ceil(duration / MAX_AVERAGE_SAMPLE_INTERVAL_MS);
-    if (motionSamplesRef.current < minimumSamples) {
+    const maxSampleGap = Math.max(
+      maxSampleGapRef.current,
+      endTime - lastSampleTimeRef.current,
+    );
+    if (
+      motionSamplesRef.current < minimumSamples ||
+      maxSampleGap > MAX_SAMPLE_GAP_MS
+    ) {
       setError("داده سنسور برای محاسبه شاخص کافی نبود");
       return false;
     }
@@ -329,6 +352,7 @@ export function useSleepTracker() {
       endTime,
       spikes: spikesRef.current,
       sampleCount: motionSamplesRef.current,
+      maxSampleGap,
       efficiency,
     };
 

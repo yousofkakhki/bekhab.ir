@@ -17,7 +17,7 @@ async function installMotionHarness(page: Page, initialTime: number) {
 }
 
 async function emitValidMinuteOfMotionData(page: Page) {
-  await page.waitForFunction(() => '__bekhabMotionHandler' in window);
+  await page.waitForFunction(() => '__bekhabMotionReady' in window);
   await page.evaluate(() => {
     for (let index = 0; index < 13; index += 1) {
       const event = new Event('devicemotion');
@@ -25,9 +25,13 @@ async function emitValidMinuteOfMotionData(page: Page) {
         value: { x: 0, y: 0, z: 9.81 },
       });
       window.dispatchEvent(event);
+      if (index < 12) {
+        (window as unknown as { __advanceTrackerTime: (milliseconds: number) => void })
+          .__advanceTrackerTime(5_000);
+      }
     }
     (window as unknown as { __advanceTrackerTime: (milliseconds: number) => void })
-      .__advanceTrackerTime(60_001);
+      .__advanceTrackerTime(1);
   });
 }
 
@@ -155,7 +159,7 @@ test.describe('Sleep tracker', () => {
       (window as unknown as { __pendingWakeLockProbe: { released: number } })
         .__pendingWakeLockProbe.released
     )).toBe(1);
-    await expect.poll(() => page.evaluate(() => '__bekhabMotionHandler' in window)).toBe(false);
+    await expect.poll(() => page.evaluate(() => '__bekhabMotionReady' in window)).toBe(false);
   });
 
   test('starts session duration after motion permission is granted', async ({ page }) => {
@@ -193,7 +197,7 @@ test.describe('Sleep tracker', () => {
         .__advanceTrackerTime(60_001);
       (window as unknown as { __grantMotionPermission: () => void }).__grantMotionPermission();
     });
-    await page.waitForFunction(() => '__bekhabMotionHandler' in window);
+    await page.waitForFunction(() => '__bekhabMotionReady' in window);
     await page.evaluate(() => {
       for (let index = 0; index < 13; index += 1) {
         const event = new Event('devicemotion');
@@ -235,7 +239,7 @@ test.describe('Sleep tracker', () => {
     await page.goto('/');
 
     await page.getByRole('button', { name: 'شروع ثبت حرکت شبانه' }).click();
-    await page.waitForFunction(() => '__bekhabMotionHandler' in window);
+    await page.waitForFunction(() => '__bekhabMotionReady' in window);
     await page.evaluate(() => {
       const event = new Event('devicemotion');
       Object.defineProperty(event, 'accelerationIncludingGravity', {
@@ -266,13 +270,36 @@ test.describe('Sleep tracker', () => {
     await page.goto('/');
 
     await page.getByRole('button', { name: 'شروع ثبت حرکت شبانه' }).click();
-    await page.waitForFunction(() => '__bekhabMotionHandler' in window);
+    await page.waitForFunction(() => '__bekhabMotionReady' in window);
     await page.evaluate(() => {
       const event = new Event('devicemotion');
       Object.defineProperty(event, 'accelerationIncludingGravity', {
         value: { x: 0, y: 0, z: 9.81 },
       });
       window.dispatchEvent(event);
+      (window as unknown as { __advanceTrackerTime: (milliseconds: number) => void })
+        .__advanceTrackerTime(60_001);
+    });
+    await page.getByRole('button', { name: 'پایان و ذخیره حرکت‌ها' }).click();
+
+    await expect(page.getByText('داده سنسور برای محاسبه شاخص کافی نبود', { exact: true })).toBeVisible();
+    await expect(page.getByText('شاخص این جلسه', { exact: true })).toHaveCount(0);
+  });
+
+  test('does not score burst-only samples followed by sensor silence', async ({ page }) => {
+    await installMotionHarness(page, 1_000_000);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'شروع ثبت حرکت شبانه' }).click();
+    await page.waitForFunction(() => '__bekhabMotionReady' in window);
+
+    await page.evaluate(() => {
+      for (let index = 0; index < 13; index += 1) {
+        const event = new Event('devicemotion');
+        Object.defineProperty(event, 'accelerationIncludingGravity', {
+          value: { x: 0, y: 0, z: 9.81 },
+        });
+        window.dispatchEvent(event);
+      }
       (window as unknown as { __advanceTrackerTime: (milliseconds: number) => void })
         .__advanceTrackerTime(60_001);
     });
@@ -338,6 +365,7 @@ test.describe('Sleep tracker', () => {
         endTime: startTime + 10 * 60_000,
         spikes: [],
         sampleCount: 120,
+        maxSampleGap: 5_000,
         efficiency: 100,
       });
       await new Promise<void>((resolve, reject) => {
@@ -414,6 +442,7 @@ test.describe('Sleep tracker', () => {
         endTime: oldStart + 60_001,
         spikes: [],
         sampleCount: 13,
+        maxSampleGap: 5_000,
         efficiency: 100,
       });
       await new Promise<void>((resolve, reject) => {
