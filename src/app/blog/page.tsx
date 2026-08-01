@@ -1,14 +1,13 @@
-// Blog route — مقالات خواب برای سئو
 import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "بلاگ خواب | بِخواب — مقالات علمی بهبود خواب",
+  title: "منابع معتبر خواب | بِخواب",
   description:
-    "مقالات علمی و کاربردی درباره بهداشت خواب، ریتم شبانه‌روزی، تنفس ۴-۷-۸، تأثیر نویز سفید و ترفندهای بهبود کیفیت خواب.",
+    "پیوند به منابع معتبر و عمومی درباره خواب، کم‌خوابی و بی‌خوابی از CDC، NHLBI و NHS.",
   openGraph: {
-    title: "بلاگ خواب | بِخواب",
-    description: "مقالات علمی بهبود خواب به فارسی",
+    title: "منابع معتبر خواب | بِخواب",
+    description: "منابع عمومی و معتبر برای مطالعه بیشتر درباره خواب",
     url: "https://bekhab.ir/blog",
     locale: "fa_IR",
     type: "website",
@@ -18,133 +17,88 @@ export const metadata: Metadata = {
   },
 };
 
-interface BlogPost {
-  slug: string;
-  title: string;
-  excerpt: string;
-  date: string;
-  readTime: string;
-  emoji: string;
-}
-
-const POSTS: BlogPost[] = [
+const RESOURCES = [
   {
-    slug: "sleep-hygiene-guide",
-    title: "راهنمای جامع بهداشت خواب",
-    excerpt:
-      "بهداشت خواب مجموعه‌ای از عادت‌ها و شرایط محیطی است که به خواب بهتر کمک می‌کند. در این مقاله ۱۰ اصل طلایی بهداشت خواب را بررسی می‌کنیم.",
-    date: "۱۴۰۴/۰۳/۰۱",
-    readTime: "۸ دقیقه",
-    emoji: "🛏️",
+    href: "https://www.cdc.gov/sleep/about/index.html",
+    title: "درباره خواب",
+    description: "اطلاعات عمومی درباره خواب و عادت‌های خواب از مرکز کنترل و پیشگیری بیماری‌های آمریکا.",
+    source: "CDC",
+    emoji: "🌙",
   },
   {
-    slug: "4-7-8-breathing",
-    title: "تکنیک تنفس ۴-۷-۸: خواب در ۶۰ ثانیه",
-    excerpt:
-      "دکتر اندرو وایل این تکنیک را «آرام‌بخش طبیعی سیستم عصبی» می‌نامد. یاد بگیرید چطور با تنفس ۴-۷-۸ سریع‌تر بخوابید.",
-    date: "۱۴۰۴/۰۲/۲۵",
-    readTime: "۵ دقیقه",
-    emoji: "🫁",
-  },
-  {
-    slug: "circadian-rhythm",
-    title: "ریتم شبانه‌روزی: ساعت درونی بدن شما",
-    excerpt:
-      "ریتم سیرکادین چگونه کار می‌کند؟ چرا نور آبی خواب را مختل می‌کند؟ نقش ملاتونین و کورتیزول در چرخه خواب-بیداری.",
-    date: "۱۴۰۴/۰۲/۱۸",
-    readTime: "۱۰ دقیقه",
+    href: "https://www.nhlbi.nih.gov/health/sleep-deprivation",
+    title: "کم‌خوابی و محرومیت از خواب",
+    description: "مروری بر کم‌خوابی، نشانه‌ها و زمان مراجعه برای دریافت راهنمایی تخصصی.",
+    source: "NHLBI",
     emoji: "⏰",
   },
   {
-    slug: "white-noise-science",
-    title: "علم نویز سفید: چرا صدای یکنواخت خواب‌آور است؟",
-    excerpt:
-      "تحقیقات علمی نشان می‌دهد نویز سفید و قهوه‌ای می‌تواند زمان به‌خواب‌رفتن را تا ۴۰٪ کاهش دهد. بررسی مکانیزم عصبی آن.",
-    date: "۱۴۰۴/۰۲/۱۰",
-    readTime: "۷ دقیقه",
-    emoji: "🎵",
+    href: "https://www.nhs.uk/conditions/insomnia/",
+    title: "بی‌خوابی",
+    description: "راهنمای عمومی سرویس سلامت بریتانیا درباره بی‌خوابی و دریافت کمک حرفه‌ای.",
+    source: "NHS",
+    emoji: "🛏️",
   },
-  {
-    slug: "sleep-cycles-explained",
-    title: "چرخه‌های خواب: از خواب سبک تا REM",
-    excerpt:
-      "هر چرخه خواب ۹۰ دقیقه طول می‌کشد و شامل ۴ مرحله است. بدانید کی بیدار شوید تا سرحال باشید.",
-    date: "۱۴۰۴/۰۲/۰۳",
-    readTime: "۶ دقیقه",
-    emoji: "🔄",
-  },
-  {
-    slug: "melatonin-guide",
-    title: "راهنمای کامل ملاتونین: دوز، زمان مصرف و عوارض",
-    excerpt:
-      "ملاتونین هورمون خواب بدن شماست. آیا مصرف مکمل ملاتونین بی‌خطر است؟ دوز مناسب چقدر است؟",
-    date: "۱۴۰۴/۰۱/۲۵",
-    readTime: "۹ دقیقه",
-    emoji: "💊",
-  },
-];
+] as const;
 
-export default function BlogPage() {
+export default function ResourcesPage() {
   return (
     <main className="min-h-screen bg-obsidian text-white">
-      {/* Header */}
-      <header className="pt-8 pb-12 px-6">
-        <div className="max-w-2xl mx-auto">
+      <header className="px-6 pb-12 pt-8">
+        <div className="mx-auto max-w-2xl">
           <Link
             href="/"
-            className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors mb-4 inline-block"
+            className="mb-4 inline-block text-sm text-indigo-400 transition-colors hover:text-indigo-300"
           >
             ← بازگشت به بِخواب
           </Link>
-          <h1 className="text-3xl font-bold gradient-text mb-3">
-            بلاگ خواب 📝
+          <h1 className="gradient-text mb-3 text-3xl font-bold">
+            منابع معتبر خواب
           </h1>
-          <p className="text-white/50 text-sm leading-relaxed">
-            مقالات علمی و کاربردی درباره بهبود کیفیت خواب، بهداشت خواب و
-            آرامش ذهن
+          <p className="text-sm leading-relaxed text-white/50">
+            برای مطالعه بیشتر، از منابع عمومی و معتبر زیر استفاده کنید. این
+            پیوندها جایگزین تشخیص یا توصیه پزشکی نیستند.
           </p>
         </div>
       </header>
 
-      {/* Articles grid */}
-      <section className="px-6 pb-16">
-        <div className="max-w-2xl mx-auto space-y-4">
-          {POSTS.map((post) => (
-            <article
-              key={post.slug}
-              className="glass rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 group"
-            >
-              <div className="flex gap-4">
-                <div className="text-3xl flex-shrink-0 mt-1">
-                  {post.emoji}
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-base font-bold text-white/90 mb-2 group-hover:text-indigo-300 transition-colors">
-                    {post.title}
-                  </h2>
-                  <p className="text-sm text-white/40 leading-relaxed mb-3">
-                    {post.excerpt}
-                  </p>
-                  <div className="flex items-center gap-3 text-xs text-white/30">
-                    <span>{post.date}</span>
-                    <span>·</span>
-                    <span>{post.readTime} مطالعه</span>
-                  </div>
-                </div>
-              </div>
+      <section className="px-6 pb-16" aria-label="منابع خواب">
+        <div className="mx-auto max-w-2xl space-y-4">
+          {RESOURCES.map((resource) => (
+            <article key={resource.href}>
+              <a
+                href={resource.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="glass group flex gap-4 rounded-2xl p-6 transition-all duration-300 hover:bg-white/10"
+              >
+                <span className="mt-1 flex-shrink-0 text-3xl" aria-hidden="true">
+                  {resource.emoji}
+                </span>
+                <span className="flex-1">
+                  <span className="mb-2 block text-base font-bold text-white/90 transition-colors group-hover:text-indigo-300">
+                    {resource.title}
+                  </span>
+                  <span className="mb-3 block text-sm leading-relaxed text-white/40">
+                    {resource.description}
+                  </span>
+                  <span className="text-xs text-indigo-300">
+                    مطالعه در {resource.source} ↗
+                  </span>
+                </span>
+              </a>
             </article>
           ))}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 py-8 px-6">
-        <div className="max-w-2xl mx-auto text-center">
+      <footer className="border-t border-white/5 px-6 py-8">
+        <div className="mx-auto max-w-2xl text-center">
           <Link
             href="/"
-            className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+            className="text-sm text-indigo-400 transition-colors hover:text-indigo-300"
           >
-            بِخواب — بهینه‌سازی خواب ایرانی 🌙
+            بِخواب — ابزارهای آرامش و برنامه‌ریزی خواب 🌙
           </Link>
         </div>
       </footer>

@@ -13,11 +13,11 @@ export default defineConfig({
   testDir: './tests',
   fullyParallel: false, // audio tests instrument globals; keep them serial
   forbidOnly: !!process.env.CI,
-  retries: 0,
+  retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://localhost:3003',
+    baseURL: 'http://127.0.0.1:3013',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -36,9 +36,9 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'npm start',
-    url: 'http://localhost:3003',
-    reuseExistingServer: true,
-    timeout: 30_000,
+    command: 'npm run build && HOSTNAME=127.0.0.1 PORT=3013 npm start',
+    url: 'http://127.0.0.1:3013',
+    reuseExistingServer: !process.env.CI,
+    timeout: 180_000,
   },
 });

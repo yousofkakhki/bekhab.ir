@@ -95,7 +95,10 @@ export default function BreathingCircle() {
       {/* Title */}
       <h2 className="text-xl font-bold text-white/90">تنفس ۴-۷-۸</h2>
       <p className="text-sm text-white/50 max-w-xs text-center">
-        تکنیک دکتر اندرو وایل — آرام‌سازی سیستم عصبی پاراسمپاتیک
+        راهنمای زمان‌بندی دم، نگه‌داشتن نفس و بازدم
+      </p>
+      <p className="text-xs text-white/30 max-w-xs text-center">
+        اگر احساس سرگیجه یا ناراحتی داشتید، تمرین را متوقف کنید.
       </p>
 
       {/* Circle */}

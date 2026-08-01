@@ -16,6 +16,10 @@ test.describe('Play / pause synchronisation', () => {
     await page.waitForLoadState('networkidle');
   });
 
+  test('each sound exposes one unambiguous play action', async ({ page }) => {
+    await expect(page.locator(`button[aria-label="پخش ${RAIN}"]`)).toHaveCount(1);
+  });
+
   test('activating ONE sound starts exactly ONE source in ONE context', async ({ page }) => {
     await page.locator(`button[aria-label="پخش ${RAIN}"]`).first().click();
     await page.waitForTimeout(1200);
@@ -60,7 +64,7 @@ test.describe('Play / pause synchronisation', () => {
     await page.waitForTimeout(800);
 
     // Card should now show the "pause/stop" affordance (aria-label flips to توقف ...)
-    await expect(page.locator(`button[aria-label="توقف ${RAIN}"]`)).toBeVisible();
+    await expect(page.locator(`button[aria-label="توقف ${RAIN}"]`).first()).toBeVisible();
 
     // Floating global bar appears and reports it is playing
     const globalBar = page.locator('text=در حال پخش');
@@ -69,7 +73,7 @@ test.describe('Play / pause synchronisation', () => {
     // Global pause → should report stopped
     await page.locator('button[aria-label="توقف همه"]').click();
     await page.waitForTimeout(400);
-    await expect(page.locator('text=متوقف')).toBeVisible();
+    await expect(page.getByText('متوقف', { exact: true })).toBeVisible();
 
     // Resume
     await page.locator('button[aria-label="پخش همه"]').click();
@@ -106,5 +110,17 @@ test.describe('Play / pause synchronisation', () => {
 
     // Global bar disappears when no active sounds remain
     await expect(page.locator('button[aria-label="توقف همه صداها"]')).toHaveCount(0);
+  });
+
+  test('a saved mix can be restored', async ({ page }) => {
+    await page.locator(`button[aria-label="پخش ${RAIN}"]`).first().click();
+    await page.locator(`button[aria-label="پخش ${FIRE}"]`).first().click();
+    await page.getByRole('button', { name: '💾 ذخیره ترکیب فعلی' }).click();
+    await page.locator('button[aria-label="توقف همه صداها"]').click();
+
+    await page.getByRole('button', { name: 'بازیابی ترکیب ذخیره‌شده' }).click();
+
+    await expect(page.locator(`button[aria-label="توقف ${RAIN}"]`).first()).toBeVisible();
+    await expect(page.locator(`button[aria-label="توقف ${FIRE}"]`).first()).toBeVisible();
   });
 });

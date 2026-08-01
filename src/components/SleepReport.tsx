@@ -1,14 +1,14 @@
 // SleepReport.tsx — گزارش خواب با نمودار ستونی CSS
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSleepTracker, buildHourlyBuckets, type SleepSession, type HourlyBucket } from "@/hooks/useSleepTracker";
+import { useState, useEffect, useMemo } from "react";
+import { useSleepTracker, buildHourlyBuckets, type SleepSession } from "@/hooks/useSleepTracker";
 
-function getQualityLabel(efficiency: number): { label: string; color: string; emoji: string } {
-  if (efficiency >= 85) return { label: "عالی", color: "text-emerald-400", emoji: "🌟" };
-  if (efficiency >= 70) return { label: "خوب", color: "text-indigo-400", emoji: "😊" };
+function getMovementLabel(efficiency: number): { label: string; color: string; emoji: string } {
+  if (efficiency >= 85) return { label: "بسیار آرام", color: "text-emerald-400", emoji: "🌟" };
+  if (efficiency >= 70) return { label: "آرام", color: "text-indigo-400", emoji: "😊" };
   if (efficiency >= 50) return { label: "متوسط", color: "text-amber-400", emoji: "😐" };
-  return { label: "ضعیف", color: "text-rose-400", emoji: "😴" };
+  return { label: "پرتحرک", color: "text-rose-400", emoji: "↕️" };
 }
 
 const persianDigits = (n: number | string) => {
@@ -32,52 +32,92 @@ function formatDate(timestamp: number): string {
 }
 
 export default function SleepReport() {
-  const { lastSession, loadAllSessions } = useSleepTracker();
+  const {
+    isTracking,
+    lastSession,
+    error,
+    startTracking,
+    stopTracking,
+    loadAllSessions,
+  } = useSleepTracker();
   const [sessions, setSessions] = useState<SleepSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<SleepSession | null>(null);
-  const [buckets, setBuckets] = useState<HourlyBucket[]>([]);
 
   useEffect(() => {
-    loadAllSessions().then((all) => {
-      setSessions(all.sort((a, b) => b.startTime - a.startTime).slice(0, 7));
-    });
+    loadAllSessions()
+      .then((all) => {
+        setSessions(all.sort((a, b) => b.startTime - a.startTime).slice(0, 7));
+      })
+      .catch(() => setSessions([]));
   }, [loadAllSessions]);
 
-  useEffect(() => {
-    const session = selectedSession || lastSession;
-    if (session) {
-      setBuckets(buildHourlyBuckets(session));
-    }
-  }, [selectedSession, lastSession]);
-
   const session = selectedSession || lastSession;
+  const buckets = useMemo(
+    () => (session ? buildHourlyBuckets(session) : []),
+    [session],
+  );
+  const trackerControls = (
+    <div className="glass rounded-2xl p-6 text-center max-w-md mx-auto mb-6">
+      <p className="text-white/70 text-sm mb-2">
+        گوشی را هنگام خواب روی تشک و نزدیک خود قرار دهید.
+      </p>
+      <p className="text-white/50 text-xs mb-4">
+        ثبت با سنسور حرکت انجام می‌شود و برای ادامه باید این صفحه باز بماند.
+        این شاخص جایگزین ابزار پزشکی یا سنجش مراحل خواب نیست.
+      </p>
+      <button
+        type="button"
+        onClick={() => void (isTracking ? stopTracking() : startTracking())}
+        className={`rounded-full px-6 py-3 text-sm font-medium transition-colors ${
+          isTracking
+            ? "border border-rose-400/30 bg-rose-500/20 text-rose-200 hover:bg-rose-500/30"
+            : "border border-indigo-400/30 bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/30"
+        }`}
+      >
+        {isTracking ? "پایان و ذخیره حرکت‌ها" : "شروع ثبت حرکت شبانه"}
+      </button>
+      {isTracking && (
+        <p aria-live="polite" className="mt-3 text-xs text-emerald-300">
+          ردیابی فعال است…
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="mt-3 text-sm text-rose-300">
+          {error}
+        </p>
+      )}
+    </div>
+  );
 
   if (!session) {
     return (
       <section className="py-12">
         <h2 className="text-xl font-bold text-white/90 text-center mb-4">
-          📊 گزارش خواب
+          شاخص آرامش حرکتی
         </h2>
+        {trackerControls}
         <div className="glass rounded-2xl p-8 text-center max-w-md mx-auto">
           <p className="text-white/40 text-sm">
-            هنوز هیچ جلسه خوابی ثبت نشده.
+            هنوز هیچ جلسه‌ای ثبت نشده.
             <br />
-            از بخش ردیابی خواب استفاده کنید.
+            از بخش ثبت حرکت شبانه استفاده کنید.
           </p>
         </div>
       </section>
     );
   }
 
-  const quality = getQualityLabel(session.efficiency);
+  const quality = getMovementLabel(session.efficiency);
   const duration = session.endTime - session.startTime;
   const maxMovement = Math.max(...buckets.map((b) => b.movement), 1);
 
   return (
     <section className="py-12">
       <h2 className="text-xl font-bold text-white/90 text-center mb-6">
-        📊 گزارش خواب
+        شاخص آرامش حرکتی
       </h2>
+
+      {trackerControls}
 
       {/* Session selector */}
       {sessions.length > 1 && (
@@ -102,10 +142,10 @@ export default function SleepReport() {
       )}
 
       <div className="glass rounded-2xl p-6 max-w-lg mx-auto">
-        {/* Efficiency score */}
+        {/* Movement score */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="text-sm text-white/50 mb-1">کیفیت خواب</p>
+            <p className="text-sm text-white/50 mb-1">شاخص این جلسه</p>
             <div className="flex items-center gap-2">
               <span className="text-3xl">{quality.emoji}</span>
               <span className={`text-2xl font-bold ${quality.color}`}>
@@ -115,7 +155,7 @@ export default function SleepReport() {
             </div>
           </div>
           <div className="text-left">
-            <p className="text-sm text-white/50 mb-1">مدت خواب</p>
+            <p className="text-sm text-white/50 mb-1">مدت ثبت</p>
             <p className="text-sm text-white/80">{formatDuration(duration)}</p>
           </div>
         </div>

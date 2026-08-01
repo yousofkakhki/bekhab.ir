@@ -28,6 +28,7 @@ let mediaSessionReady = false;
 const tracks = new Map<string, TrackNode>();
 const buffers = new Map<string, AudioBuffer>();
 const pending = new Set<string>(); // در حال بارگذاری — جلوگیری از start همزمان
+let desiredSounds = new Set<string>();
 
 // ===================== AudioContext (lazy, singleton) =====================
 function ensureContext(): AudioContext {
@@ -130,7 +131,11 @@ export async function startTrack(
   pending.add(soundId);
   try {
     const buf = await loadBuffer(soundId, src);
-    if (!buf || !masterGain || !ctx) return false;
+    if (!buf) {
+      useAudioStore.getState().failSound(soundId);
+      return false;
+    }
+    if (!masterGain || !ctx || !desiredSounds.has(soundId)) return false;
     if (tracks.has(soundId)) return true; // در این فاصله اضافه شده
 
     const source = ctx.createBufferSource();
@@ -221,6 +226,10 @@ export function reconcile(
   volumes: Record<string, number>,
   isGlobalPlaying: boolean
 ) {
+  desiredSounds = isGlobalPlaying
+    ? new Set(activeSounds.keys())
+    : new Set<string>();
+
   // همیشه صداهای حذف‌شده را متوقف کن (حتی اگر isGlobalPlaying=false شده باشد)
   Array.from(tracks.keys()).forEach((soundId) => {
     if (!activeSounds.has(soundId)) stopTrack(soundId);

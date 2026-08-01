@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import {
   baseMetadata,
   generateSoftwareAppJsonLd,
-  generateHealthPlanJsonLd,
+  generateWebAppJsonLd,
   generateFaqJsonLd,
 } from "@/lib/SEOConfig";
 import "./globals.css";
@@ -50,7 +50,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(generateHealthPlanJsonLd()),
+            __html: JSON.stringify(generateWebAppJsonLd()),
           }}
         />
         <script

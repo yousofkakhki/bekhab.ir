@@ -4,7 +4,8 @@ node_modules
 .gitignore
 *.md
 Dockerfile*
-docker-compose.yml
+docker-compose*.yml
+docker-compose*.yaml
 .env*
 .vscode
 tests

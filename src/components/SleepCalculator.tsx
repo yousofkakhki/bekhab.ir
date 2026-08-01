@@ -10,7 +10,7 @@ import {
 import {
   calculateBedtime,
   toPersianDigits,
-  getSleepQuality,
+  getDurationCategory,
   type BedtimeResult,
 } from "@/lib/sleepMath";
 import WarningCard from "./WarningCard";
@@ -19,11 +19,20 @@ export default function SleepCalculator() {
   const [wakeTime, setWakeTime] = useState("07:00");
   const [result, setResult] = useState<BedtimeResult | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
   const handleCalculate = () => {
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(wakeTime)) {
+      setResult(null);
+      setShowResult(false);
+      setValidationError("زمان بیدار شدن را وارد کنید");
+      return;
+    }
+
     const bedtimeResult = calculateBedtime(wakeTime);
     setResult(bedtimeResult);
     setShowResult(true);
+    setValidationError("");
   };
 
   const qualityColors: Record<string, string> = {
@@ -33,9 +42,9 @@ export default function SleepCalculator() {
   };
 
   const qualityLabels: Record<string, string> = {
-    good: "عالی ✨",
-    fair: "متوسط ⚠️",
-    poor: "ناکافی ❌",
+    good: "مدت بیشتر",
+    fair: "مدت متوسط",
+    poor: "مدت کوتاه",
   };
 
   const cycleEmojis: Record<number, string> = {
@@ -51,19 +60,24 @@ export default function SleepCalculator() {
         {/* ستون محاسبه */}
         <div className="w-full lg:w-1/2">
           <div className="glass rounded-3xl p-6 md:p-8">
-            <p className="text-white/50 mb-5 text-sm">
+            <label htmlFor="wake-time" className="block text-white/70 mb-5 text-sm">
               چه ساعتی می‌خواهید بیدار شوید؟
-            </p>
+            </label>
 
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="relative">
                 <input
+                  id="wake-time"
                   type="time"
                   value={wakeTime}
                   onChange={(e) => {
                     setWakeTime(e.target.value);
                     setShowResult(false);
+                    setValidationError("");
                   }}
+                  required
+                  aria-invalid={validationError ? "true" : "false"}
+                  aria-describedby={validationError ? "wake-time-error" : undefined}
                   className="bg-white/5 border border-white/10 rounded-xl px-6 py-3 
                              text-2xl text-white text-center focus:border-indigo-400/50 
                              focus:outline-none transition-colors"
@@ -81,6 +95,12 @@ export default function SleepCalculator() {
               </button>
             </div>
 
+            {validationError && (
+              <p id="wake-time-error" role="alert" className="mt-3 text-sm text-rose-300">
+                {validationError}
+              </p>
+            )}
+
             {/* نتایج */}
             {showResult && result && (
               <div className="mt-6 animate-fadeIn">
@@ -89,12 +109,12 @@ export default function SleepCalculator() {
                   <span className="text-white text-lg font-bold mx-1" dir="ltr">
                     {toPersianDigits(result.wakeTime)}
                   </span>
-                  ، بهترین زمان‌ها:
+                  ، زمان‌های تقریبی:
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {result.bedtimes.map((time, i) => {
-                    const quality = getSleepQuality(result.sleepDurations[i]);
+                    const quality = getDurationCategory(result.sleepDurations[i]);
                     const cycles = result.cycles[i];
 
                     return (
@@ -129,8 +149,7 @@ export default function SleepCalculator() {
                 </div>
 
                 <p className="mt-4 text-xs text-white/25 text-center">
-                  💡 بر اساس چرخه‌های ۹۰ دقیقه‌ای REM و ۱۵ دقیقه زمان به خواب
-                  رفتن
+                  💡 با فرض چرخه ۹۰ دقیقه‌ای و حدود ۱۵ دقیقه زمان به خواب رفتن
                 </p>
 
                 {result.sleepDurations.some((d) => d < 6) && <WarningCard />}
@@ -142,19 +161,19 @@ export default function SleepCalculator() {
         {/* ستون توضیحات */}
         <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start gap-6">
           <h2 className="text-2xl md:text-3xl font-bold text-center lg:text-right leading-snug">
-            محاسبه‌گر هوشمند{" "}
-            <span className="text-indigo-400">چرخه خواب</span>
+            <span className="text-indigo-400">زمان‌های تقریبی خواب</span>
           </h2>
 
           <p className="text-white/40 text-center lg:text-right max-w-xl text-sm leading-relaxed">
-            بر اساس چرخه‌های ۹۰ دقیقه‌ای REM، بهترین زمان خواب و بیداری را
-            محاسبه کنید. بیدار شدن بین چرخه‌ها باعث خستگی می‌شود.
+            این محاسبه با فرض چرخه‌های ۹۰ دقیقه‌ای و ۱۵ دقیقه زمان به خواب رفتن
+            انجام می‌شود. چرخه خواب در افراد متفاوت است؛ نتیجه فقط یک تخمین
+            برای برنامه‌ریزی است.
           </p>
 
           <div className="flex flex-col gap-4 w-full">
             <div className="border-b border-white/5 pb-4">
               <FeatureItem icon={TbAdjustments}>
-                محاسبه دقیق ۴ زمان بهینه خواب
+                نمایش ۴ زمان تقریبی خواب
               </FeatureItem>
             </div>
             <div className="border-b border-white/5 pb-4">
@@ -164,7 +183,7 @@ export default function SleepCalculator() {
             </div>
             <div>
               <FeatureItem icon={TbAlarm}>
-                نمایش کیفیت خواب هر گزینه
+                نمایش مدت خواب هر گزینه
               </FeatureItem>
             </div>
           </div>

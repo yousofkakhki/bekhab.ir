@@ -14,7 +14,7 @@ import {
 
 export default function SoundGrid() {
   const { activeSounds, volumes, toggleSound, changeVolume } = useAudioMixer();
-  const { saveFavoriteMix, favoriteMix } = useAudioStore();
+  const { saveFavoriteMix, loadFavoriteMix, favoriteMix, audioError } = useAudioStore();
 
   const hasActiveSounds = activeSounds.size > 0;
 
@@ -42,10 +42,27 @@ export default function SoundGrid() {
         )}
       </div>
 
+      {audioError && (
+        <p
+          id="audio-error"
+          role="alert"
+          className="mb-6 rounded-xl border border-rose-400/30 bg-rose-500/10 p-3 text-center text-sm text-rose-200"
+        >
+          {audioError}
+        </p>
+      )}
+
       {/* اطلاع‌رسانی ترکیب ذخیره‌شده */}
       {favoriteMix && favoriteMix.length > 0 && !hasActiveSounds && (
-        <div className="mb-6 p-4 rounded-xl glass text-sm text-indigo-300 text-center border border-indigo-400/20">
-          💡 شما یک ترکیب ذخیره‌شده دارید. صداهای مورد علاقه‌تان را فعال کنید!
+        <div className="mb-6 flex flex-col items-center gap-3 rounded-xl border border-indigo-400/20 p-4 text-center text-sm text-indigo-300 glass">
+          <p>💡 یک ترکیب ذخیره‌شده دارید.</p>
+          <button
+            type="button"
+            onClick={loadFavoriteMix}
+            className="rounded-full border border-indigo-400/30 bg-indigo-500/20 px-5 py-2 text-indigo-200 transition-colors hover:bg-indigo-500/30"
+          >
+            بازیابی ترکیب ذخیره‌شده
+          </button>
         </div>
       )}
 
@@ -78,12 +95,10 @@ export default function SoundGrid() {
             >
               {/* آیکون */}
               <span
-                className={`text-4xl transition-all duration-300 cursor-pointer select-none ${
-                  isActive ? "scale-110" : "opacity-50 hover:opacity-70"
+                aria-hidden="true"
+                className={`text-4xl transition-all duration-300 select-none ${
+                  isActive ? "scale-110" : "opacity-50"
                 }`}
-                onClick={() => toggleSound(sound.id, sound.src)}
-                role="button"
-                aria-label={sound.name}
               >
                 {sound.icon}
               </span>
@@ -124,7 +139,7 @@ export default function SoundGrid() {
                   onChange={(e) =>
                     changeVolume(sound.id, parseFloat(e.target.value))
                   }
-                  className="flex-1"
+                  className="min-w-0 flex-1"
                   aria-label={`حجم صدای ${sound.name}`}
                   dir="ltr"
                 />

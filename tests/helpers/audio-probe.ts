@@ -46,7 +46,6 @@ export async function installAudioProbe(page: Page) {
       };
 
       const origDecode = ctx.decodeAudioData.bind(ctx);
-      // @ts-expect-error overload
       ctx.decodeAudioData = (data: ArrayBuffer, ...rest: unknown[]) => {
         probe.decodeCalls++;
         // @ts-expect-error passthrough

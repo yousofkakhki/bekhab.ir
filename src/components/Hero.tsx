@@ -2,12 +2,12 @@
 "use client";
 
 import {
-  TbBed,
-  TbRocket,
-  TbTrees,
-  TbMoodSmile,
-  TbBabyCarriage,
-  TbHeadphones,
+  TbClock,
+  TbMusic,
+  TbVolume,
+  TbDeviceFloppy,
+  TbLungs,
+  TbDeviceMobile,
 } from "react-icons/tb";
 import type { IconType } from "react-icons";
 
@@ -30,7 +30,7 @@ export default function Hero() {
             <span className="gradient-text">آرام بگیرید. بخوابید.</span>
           </h1>
           <p className="text-lg md:text-xl text-white/50 max-w-lg">
-            اکوسیستم هوشمند خواب با{" "}
+            ابزارهای ساده برای آرامش پیش از خواب با{" "}
             <span className="text-indigo-400 font-medium">
               صداهای طبیعی آرامش‌بخش
             </span>
@@ -50,23 +50,23 @@ export default function Hero() {
       {/* Benefits */}
       <section className="w-full max-w-content mx-auto px-6 md:px-10 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-12 gap-y-5 items-center justify-items-center">
-          <Benefit icon={TbRocket}>
-            افزایش بهره‌وری با تمرکز بیشتر
+          <Benefit icon={TbClock}>
+            محاسبه تقریبی زمان خواب
           </Benefit>
-          <Benefit icon={TbMoodSmile}>
-            کاهش استرس و اضطراب
+          <Benefit icon={TbMusic}>
+            ترکیب هم‌زمان صداها
           </Benefit>
-          <Benefit icon={TbTrees}>
-            بهبود تجربه مدیتیشن
+          <Benefit icon={TbVolume}>
+            تنظیم جداگانه حجم هر صدا
           </Benefit>
-          <Benefit icon={TbBed}>
-            انقلابی در کیفیت خواب
+          <Benefit icon={TbDeviceFloppy}>
+            ذخیره ترکیب دلخواه
           </Benefit>
-          <Benefit icon={TbHeadphones}>
-            تسکین وزوز گوش
+          <Benefit icon={TbLungs}>
+            راهنمای تنفس زمان‌بندی‌شده
           </Benefit>
-          <Benefit icon={TbBabyCarriage}>
-            خواب راحت کودک
+          <Benefit icon={TbDeviceMobile}>
+            ثبت حرکت شبانه روی دستگاه
           </Benefit>
         </div>
       </section>

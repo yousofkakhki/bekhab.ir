@@ -16,9 +16,9 @@ export interface BedtimeResult {
 }
 
 /**
- * محاسبه بهترین زمان‌های خواب بر اساس زمان بیداری
+ * محاسبه زمان‌های تقریبی خواب بر اساس زمان بیداری
  * @param wakeTime — ساعت بیدار شدن به فرمت "HH:mm"
- * @returns آرایه‌ای از ۴ زمان بهینه خواب (۶، ۵، ۴ و ۳ چرخه)
+ * @returns آرایه‌ای از ۴ زمان تقریبی خواب (۶، ۵، ۴ و ۳ چرخه)
  */
 export function calculateBedtime(wakeTime: string): BedtimeResult {
   const [hours, minutes] = wakeTime.split(":").map(Number);
@@ -97,9 +97,9 @@ export function toPersianDigits(str: string): string {
 }
 
 /**
- * بررسی کیفیت خواب بر اساس مدت
+ * دسته‌بندی مدت خواب
  */
-export function getSleepQuality(durationHours: number): "good" | "fair" | "poor" {
+export function getDurationCategory(durationHours: number): "good" | "fair" | "poor" {
   if (durationHours >= 7) return "good";
   if (durationHours >= 6) return "fair";
   return "poor";

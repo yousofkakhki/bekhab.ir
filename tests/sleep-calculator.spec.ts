@@ -40,6 +40,21 @@ test.describe('Sleep Calculator', () => {
     }
   });
 
+  test('rejects an empty wake time instead of rendering invalid recommendations', async ({ page }) => {
+    const wakeTime = page.locator('input[type="time"]');
+    await wakeTime.fill('');
+
+    await page.getByRole('button', { name: 'محاسبه کن' }).click();
+
+    await expect(page.locator('#wake-time-error')).toContainText('زمان بیدار شدن را وارد کنید');
+    await expect(page.getByText('NaN:NaN')).toHaveCount(0);
+  });
+
+  test('describes cycle results as estimates rather than medical predictions', async ({ page }) => {
+    await expect(page.getByText('زمان‌های تقریبی خواب', { exact: true })).toBeVisible();
+    await expect(page.getByText(/چرخه خواب در افراد متفاوت است/)).toBeVisible();
+  });
+
   test('should have focus mode', async ({ page }) => {
     // Look for focus mode button
     const buttons = page.locator('button');

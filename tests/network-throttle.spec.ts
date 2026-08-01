@@ -48,6 +48,22 @@ test.describe('Behaviour on a slow connection', () => {
     expect(probe.startedCount, 'source should start once decoded').toBeGreaterThan(0);
   });
 
+  test('turning a loading sound off prevents it from starting later', async ({ page }) => {
+    await installAudioProbe(page);
+    await page.route('**/sounds/rain.mp3', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await route.continue();
+    });
+    await page.goto('/', { waitUntil: 'networkidle' });
+
+    await page.locator('button[aria-label="پخش باران تهران"]').first().click();
+    await page.locator('button[aria-label="توقف باران تهران"]').first().click();
+    await page.waitForTimeout(2500);
+
+    expect((await readProbe(page)).startedCount).toBe(0);
+    await expect(page.locator('button[aria-label="پخش باران تهران"]').first()).toBeVisible();
+  });
+
   test('offline: clicking a sound fails gracefully without crashing the page', async ({
     page,
   }) => {
@@ -74,5 +90,16 @@ test.describe('Behaviour on a slow connection', () => {
     // The app must not throw an uncaught error; the UI must remain responsive.
     expect(pageErrors, `Uncaught errors offline:\n${pageErrors.join('\n')}`).toEqual([]);
     await expect(page.locator('#sounds')).toBeVisible();
+  });
+
+  test('a failed sound load restores the inactive UI and explains the failure', async ({ page }) => {
+    await installAudioProbe(page);
+    await page.route('**/sounds/ocean.mp3', (route) => route.abort('failed'));
+    await page.goto('/', { waitUntil: 'networkidle' });
+
+    await page.locator('button[aria-label="پخش امواج خزر"]').first().click();
+
+    await expect(page.locator('button[aria-label="پخش امواج خزر"]').first()).toBeVisible();
+    await expect(page.locator('#audio-error')).toContainText('بارگذاری صدا انجام نشد');
   });
 });

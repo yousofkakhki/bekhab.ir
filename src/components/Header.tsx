@@ -50,7 +50,7 @@ export default function Header() {
             <NavLink href="#sleep">محاسبه خواب</NavLink>
             <NavLink href="#sounds">صداها</NavLink>
             <NavLink href="#breathing">تنفس</NavLink>
-            <NavLink href="/blog">بلاگ</NavLink>
+            <NavLink href="/blog">منابع</NavLink>
           </nav>
 
           {/* دکمه CTA */}

@@ -3,6 +3,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { SOUNDS } from "@/lib/sound-config";
 
 interface AudioState {
   /** Map<soundId, audioSrc> — صداهای فعال */
@@ -11,6 +12,8 @@ interface AudioState {
   volumes: Record<string, number>;
   /** آیا پخش سراسری فعال است */
   isGlobalPlaying: boolean;
+  /** آخرین خطای قابل نمایش بارگذاری صدا */
+  audioError: string | null;
   /** ترکیب مورد علاقه */
   favoriteMix: { soundId: string; volume: number }[] | null;
 
@@ -18,6 +21,7 @@ interface AudioState {
   toggleSound: (soundId: string, src: string) => void;
   setVolume: (soundId: string, volume: number) => void;
   setGlobalPlaying: (playing: boolean) => void;
+  failSound: (soundId: string) => void;
   saveFavoriteMix: () => void;
   loadFavoriteMix: () => void;
   clearAll: () => void;
@@ -29,6 +33,7 @@ export const useAudioStore = create<AudioState>()(
       activeSounds: new Map(),
       volumes: {},
       isGlobalPlaying: false,
+      audioError: null,
       favoriteMix: null,
 
       toggleSound: (soundId: string, src: string) => {
@@ -42,6 +47,7 @@ export const useAudioStore = create<AudioState>()(
           return {
             activeSounds: newSounds,
             isGlobalPlaying: newSounds.size > 0 ? true : false,
+            audioError: null,
           };
         });
       },
@@ -56,6 +62,18 @@ export const useAudioStore = create<AudioState>()(
         set({ isGlobalPlaying: playing });
       },
 
+      failSound: (soundId: string) => {
+        set((state) => {
+          const activeSounds = new Map(state.activeSounds);
+          activeSounds.delete(soundId);
+          return {
+            activeSounds,
+            isGlobalPlaying: activeSounds.size > 0,
+            audioError: "بارگذاری صدا انجام نشد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.",
+          };
+        });
+      },
+
       saveFavoriteMix: () => {
         const { activeSounds, volumes } = get();
         const mix: { soundId: string; volume: number }[] = [];
@@ -68,9 +86,21 @@ export const useAudioStore = create<AudioState>()(
       loadFavoriteMix: () => {
         const { favoriteMix } = get();
         if (!favoriteMix) return;
-
-        // در اینجا فقط اطلاعات ذخیره می‌شود
-        // لود واقعی در کامپوننت انجام می‌شود
+        const soundsById = new Map(SOUNDS.map((sound) => [sound.id, sound.src]));
+        const activeSounds = new Map<string, string>();
+        const volumes = { ...get().volumes };
+        favoriteMix.forEach(({ soundId, volume }) => {
+          const src = soundsById.get(soundId);
+          if (!src) return;
+          activeSounds.set(soundId, src);
+          volumes[soundId] = volume;
+        });
+        set({
+          activeSounds,
+          volumes,
+          isGlobalPlaying: activeSounds.size > 0,
+          audioError: null,
+        });
       },
 
       clearAll: () => {
@@ -78,6 +108,7 @@ export const useAudioStore = create<AudioState>()(
         set({
           activeSounds: new Map(),
           isGlobalPlaying: false,
+          audioError: null,
         });
       },
     }),

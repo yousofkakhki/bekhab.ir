@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { FaGithub, FaInstagram, FaTelegram } from "react-icons/fa";
+import { FaInstagram, FaTelegram } from "react-icons/fa";
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -21,7 +21,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-xs text-white/30 leading-relaxed">
-              اکوسیستم هوشمند بهبود خواب ایرانی
+              ابزارهای آرامش و برنامه‌ریزی خواب
             </p>
             <div className="flex items-center gap-3">
               <SocialIcon
@@ -34,11 +34,7 @@ export default function Footer() {
                 href="https://t.me/bekhab_ir"
                 label="تلگرام"
               />
-              <SocialIcon
-                icon={FaGithub}
-                href="https://github.com"
-                label="گیت‌هاب"
-              />
+
             </div>
           </div>
 
@@ -54,16 +50,14 @@ export default function Footer() {
           <div className="flex flex-col gap-3">
             <h4 className="font-medium text-white/80 mb-1 text-sm">پشتیبانی</h4>
             <FooterLink href="mailto:info@bekhab.ir">تماس با ما</FooterLink>
-            <FooterLink href="#">گزارش مشکل</FooterLink>
-            <FooterLink href="#">ارسال بازخورد</FooterLink>
+            <FooterLink href="mailto:info@bekhab.ir?subject=%DA%AF%D8%B2%D8%A7%D8%B1%D8%B4%20%D9%85%D8%B4%DA%A9%D9%84%20%D8%AF%D8%B1%20%D8%A8%D8%AE%D9%88%D8%A7%D8%A8">گزارش مشکل</FooterLink>
+            <FooterLink href="mailto:info@bekhab.ir?subject=%D8%A8%D8%A7%D8%B2%D8%AE%D9%88%D8%B1%D8%AF%20%D8%A8%D8%AE%D9%88%D8%A7%D8%A8">ارسال بازخورد</FooterLink>
           </div>
 
           {/* منابع */}
           <div className="flex flex-col gap-3">
             <h4 className="font-medium text-white/80 mb-1 text-sm">منابع</h4>
-            <FooterLink href="/blog">بلاگ خواب</FooterLink>
-            <FooterLink href="#">سوالات متداول</FooterLink>
-            <FooterLink href="#">حریم خصوصی</FooterLink>
+            <FooterLink href="/blog">منابع خواب</FooterLink>
           </div>
         </div>
 

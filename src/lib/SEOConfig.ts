@@ -5,9 +5,9 @@ export const siteConfig = {
   name: "بخواب",
   nameEn: "Bekhab",
   url: "https://bekhab.ir",
-  title: "بخواب | راهکار هوشمند بهبود و تنظیم خواب",
+  title: "بخواب | ابزار آرامش و برنامه‌ریزی خواب",
   description:
-    "تنظیم ساعت بدن، پخش صداهای آرامش‌بخش و آنالیز کیفیت خواب برای رهایی از بی‌خوابی.",
+    "محاسبه تقریبی زمان خواب، ترکیب صداهای طبیعی، راهنمای تنفس زمان‌بندی‌شده و ثبت حرکت شبانه.",
   keywords: [
     "خواب",
     "بی خوابی",
@@ -87,7 +87,7 @@ export function generateSoftwareAppJsonLd() {
     "@type": "SoftwareApplication",
     name: siteConfig.name,
     url: siteConfig.url,
-    applicationCategory: "HealthApplication",
+    applicationCategory: "LifestyleApplication",
     operatingSystem: "Web",
     inLanguage: "fa",
     description: siteConfig.description,
@@ -96,35 +96,27 @@ export function generateSoftwareAppJsonLd() {
       price: "0",
       priceCurrency: "IRR",
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.7",
-      ratingCount: "320",
-      bestRating: "5",
-    },
   };
 }
 
-/** JSON-LD: WebApplication as HealthPlan */
-export function generateHealthPlanJsonLd() {
+/** JSON-LD: WebApplication */
+export function generateWebAppJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: `${siteConfig.name} - برنامه بهبود خواب`,
+    name: `${siteConfig.name} - ابزار برنامه‌ریزی خواب`,
     url: siteConfig.url,
     description: siteConfig.description,
     browserRequirements: "Requires JavaScript. Requires HTML5.",
     softwareVersion: "2.0.0",
-    applicationCategory: "HealthApplication",
-    applicationSubCategory: "SleepTracker",
+    applicationCategory: "LifestyleApplication",
     inLanguage: "fa",
     isAccessibleForFree: true,
     featureList: [
-      "محاسبه چرخه خواب بر اساس REM",
+      "محاسبه تقریبی زمان خواب",
       "پخش صداهای آرامش‌بخش",
-      "ردیابی کیفیت خواب",
-      "تمرین تنفس ۴-۷-۸",
-      "محافظ دوپامین شبانه",
+      "ثبت حرکت شبانه روی دستگاه",
+      "راهنمای تنفس ۴-۷-۸",
     ],
   };
 }
@@ -140,15 +132,15 @@ export function generateFaqJsonLd() {
         name: "چطور زمان مناسب خواب را محاسبه کنم؟",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "بخواب بر اساس چرخه‌های ۹۰ دقیقه‌ای خواب REM، بهترین زمان خوابیدن را محاسبه می‌کند. کافیست زمان بیداری خود را وارد کنید.",
+          text: "بخواب با فرض چرخه‌های ۹۰ دقیقه‌ای و حدود ۱۵ دقیقه زمان به خواب رفتن، چند زمان تقریبی نمایش می‌دهد. طول چرخه‌ها در افراد متفاوت است.",
         },
       },
       {
         "@type": "Question",
-        name: "آیا صداهای آرامش‌بخش واقعاً به خواب بهتر کمک می‌کنند؟",
+        name: "بخش صداهای آرامش‌بخش چه کاری انجام می‌دهد؟",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "تحقیقات نشان می‌دهد نویز سفید و صداهای طبیعی می‌توانند زمان به خواب رفتن را کاهش و کیفیت خواب را بهبود دهند.",
+          text: "این بخش امکان پخش هم‌زمان چند صدای محیطی، تنظیم جداگانه حجم و ذخیره یک ترکیب دلخواه را فراهم می‌کند.",
         },
       },
       {
@@ -156,7 +148,7 @@ export function generateFaqJsonLd() {
         name: "تنفس ۴-۷-۸ چیست؟",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "یک تکنیک تنفسی که شامل ۴ ثانیه دم، ۷ ثانیه نگه‌داشتن و ۸ ثانیه بازدم است. این تکنیک توسط دکتر اندرو ویل معرفی شده و به آرامش سیستم عصبی کمک می‌کند.",
+          text: "یک الگوی زمان‌بندی‌شده شامل ۴ ثانیه دم، ۷ ثانیه نگه‌داشتن نفس و ۸ ثانیه بازدم است. راهنمای داخل برنامه مراحل را نمایش می‌دهد.",
         },
       },
     ],

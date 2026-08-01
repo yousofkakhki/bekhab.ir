@@ -174,6 +174,7 @@ export function useSleepTracker() {
     if (typeof window === "undefined" || !("DeviceMotionEvent" in window)) {
       setError("سنسور حرکت در این دستگاه پشتیبانی نمی‌شود");
       setIsTracking(false);
+      releaseWakeLock();
       return;
     }
 
@@ -187,11 +188,13 @@ export function useSleepTracker() {
         if (perm !== "granted") {
           setError("دسترسی به سنسور حرکت رد شد");
           setIsTracking(false);
+          releaseWakeLock();
           return;
         }
       } catch {
         setError("خطا در درخواست دسترسی سنسور");
         setIsTracking(false);
+        releaseWakeLock();
         return;
       }
     }
@@ -213,7 +216,7 @@ export function useSleepTracker() {
 
     // Store cleanup reference
     (window as unknown as Record<string, unknown>).__bekhabMotionHandler = handler;
-  }, [requestWakeLock]);
+  }, [releaseWakeLock, requestWakeLock]);
 
   // Stop tracking and save session
   const stopTracking = useCallback(async () => {
@@ -252,6 +255,19 @@ export function useSleepTracker() {
   const loadAllSessions = useCallback(async () => {
     return getAllSessions();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      releaseWakeLock();
+      const handler = (window as unknown as Record<string, unknown>).__bekhabMotionHandler as
+        | EventListener
+        | undefined;
+      if (handler) {
+        window.removeEventListener("devicemotion", handler);
+        delete (window as unknown as Record<string, unknown>).__bekhabMotionHandler;
+      }
+    };
+  }, [releaseWakeLock]);
 
   return {
     isTracking,
